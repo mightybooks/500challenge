@@ -58,7 +58,7 @@ export function EntryShareBar({ title }: Props) {
     document.head.appendChild(script);
 
     return () => {
-      // 필요하면 cleanup, 지금은 SDK를 계속 유지하는 편이 나음
+      // SDK는 계속 유지
     };
   }, []);
 
@@ -67,9 +67,7 @@ export function EntryShareBar({ title }: Props) {
   // 카카오 공유
   const handleKakaoShare = () => {
     if (!kakaoReady || !window.Kakao || !window.Kakao.Share) {
-      alert(
-        "카카오 공유를 준비하는 중입니다. 잠시 후 다시 시도해 주세요."
-      );
+      alert("카카오 공유를 준비하는 중입니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
@@ -140,22 +138,15 @@ export function EntryShareBar({ title }: Props) {
     }
   };
 
-  // ------------- UI -------------
+  // ------------- UI (버튼 전용 바) -------------
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-[11px] leading-relaxed text-slate-500 sm:text-xs">
-        이 결과 페이지를 공유해보세요.
-        <br className="hidden sm:block" />
-        <span className="text-slate-400">제목:</span>{" "}
-        <span className="font-medium text-slate-600">{title}</span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-col gap-1">
+      <div className="flex w-full flex-col gap-2 sm:flex-row">
         <button
           type="button"
           onClick={handleKakaoShare}
-          className="inline-flex items-center rounded-full bg-[#FEE500] px-3 py-1.5 text-[11px] font-semibold text-slate-900 hover:bg-[#ffe94a]"
+          className="inline-flex flex-1 items-center justify-center rounded-full bg-[#FEE500] px-3 py-2.5 text-[13px] font-semibold text-slate-900 hover:bg-[#ffe94a]"
         >
           카카오톡
         </button>
@@ -163,7 +154,7 @@ export function EntryShareBar({ title }: Props) {
         <button
           type="button"
           onClick={handleTwitterShare}
-          className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800"
+          className="inline-flex flex-1 items-center justify-center rounded-full bg-slate-900 px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-slate-800"
         >
           트위터
         </button>
@@ -171,7 +162,7 @@ export function EntryShareBar({ title }: Props) {
         <button
           type="button"
           onClick={handleFacebookShare}
-          className="inline-flex items-center rounded-full bg-[#1877F2] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-[#166fe0]"
+          className="inline-flex flex-1 items-center justify-center rounded-full bg-[#1877F2] px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-[#166fe0]"
         >
           페이스북
         </button>
@@ -179,15 +170,17 @@ export function EntryShareBar({ title }: Props) {
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center rounded-full border border-slate-300 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+          className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-300 px-3 py-2.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
         >
           링크 복사
         </button>
-
-        {copied && (
-          <span className="text-[11px] text-emerald-500">복사되었습니다.</span>
-        )}
       </div>
+
+      {copied && (
+        <span className="text-center text-[11px] text-emerald-500">
+          링크가 복사되었습니다.
+        </span>
+      )}
     </div>
   );
 }

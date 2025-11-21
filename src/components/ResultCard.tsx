@@ -64,7 +64,7 @@ export function ResultCard({
 
         {typeof byteCount === "number" && (
           <span className="text-[11px] text-slate-400">
-            바이트 {byteCount}/500
+            바이트 {byteCount}/1250
           </span>
         )}
 

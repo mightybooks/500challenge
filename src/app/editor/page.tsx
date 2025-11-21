@@ -12,8 +12,9 @@ import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import { ResultCard } from "@/components/ResultCard";
 import { ensureAnonId } from "@/lib/anon";
+import { BYTE_LIMIT } from "@/lib/config";
 
-const MAX_BYTES = 500;
+const MAX_BYTES = BYTE_LIMIT;
 const WARN_BYTES = 50;
 
 type Phase = "idle" | "confirm" | "loading" | "error" | "result";
@@ -243,7 +244,7 @@ export default function EditorPage() {
             value={body}
             onChange={e => onBodyChange(e.target.value)}
             onBlur={() => setTouched(true)}
-            placeholder="본문을 입력하세요 (UTF-8 기준 500바이트 이내)"
+            placeholder={`본문을 입력하세요 (UTF-8 기준 ${MAX_BYTES}바이트 이내)`}
             className={`mt-2 w-full resize-none rounded-xl border bg-white px-4 py-3 leading-7 outline-none transition focus:ring-2 ${
               bodyBytes > MAX_BYTES || (touched && bodyBytes === 0)
                 ? "border-red-400 ring-red-200"
@@ -271,7 +272,7 @@ export default function EditorPage() {
                 onClick={manualCut}
                 className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
               >
-                500B로 자르기
+                {MAX_BYTES}B로 자르기
               </button>
             </div>
           )}
@@ -279,23 +280,26 @@ export default function EditorPage() {
 
         {/* 제출 버튼 (확인 단계로 이동) */}
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className={`rounded-xl px-5 py-3 text-sm font-semibold transition ${
-              canSubmit
-                ? "bg-black text-white hover:opacity-90"
-                : "bg-neutral-200 text-neutral-500"
-            }`}
-          >
-            다음 단계로 (제출 전 확인)
+         <button
+          type="submit"
+          disabled={!canSubmit}
+          className={`group rounded-xl px-5 py-3 text-sm font-semibold transition-all ${
+          canSubmit
+            ? "bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-sm hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-slate-50"
+            : "bg-neutral-200 text-neutral-500"
+          }`}
+        >
+          다음 단계로 (제출 전 확인)
           </button>
-
           <div className="text-xs text-neutral-500">
             {remaining >= 0 ? (
-              <>남은 용량 <strong>{remaining}</strong>B</>
+              <>
+                남은 용량 <strong>{remaining}</strong>B
+              </>
             ) : (
-              <>초과 <strong>{Math.abs(remaining)}</strong>B</>
+              <>
+                초과 <strong>{Math.abs(remaining)}</strong>B
+              </>
             )}
           </div>
         </div>
@@ -315,64 +319,88 @@ export default function EditorPage() {
         dismissOnBackdropClick={false}
       >
         {/* 확인 단계 */}
-        {phase === "confirm" && (
-          <div className="space-y-4 py-4">
-            <h2 className="text-sm font-semibold text-neutral-900">
-              오늘의 500자 소설을 이렇게 제출할까요?
-            </h2>
+      {phase === "confirm" && (
+    <div className="flex min-h-[60vh] flex-col">
+    {/* 스크롤 되는 내용 영역 */}
+    <div className="flex-1 space-y-4 overflow-y-auto py-4 pr-1">
+      <h2 className="text-sm font-semibold text-neutral-900">
+        오늘의 500자 소설을 이렇게 제출할까요?
+      </h2>
 
-            <div className="rounded-xl bg-neutral-50 px-4 py-3">
-              <p className="text-xs font-medium text-neutral-500">제목</p>
-              <p className="text-sm font-semibold text-neutral-900">
-                {title || "(제목 없음)"}
-              </p>
+      <div className="rounded-xl bg-neutral-50 px-4 py-3">
+        <p className="text-xs font-medium text-neutral-500">제목</p>
+        <p className="text-sm font-semibold text-neutral-900">
+          {title || "(제목 없음)"}
+        </p>
 
-              <p className="mt-3 text-xs font-medium text-neutral-500">본문</p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-900">
-                {body}
-              </p>
+        <p className="mt-3 text-xs font-medium text-neutral-500">본문</p>
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-900">
+          {body}
+        </p>
 
-              <p className="mt-3 text-[11px] text-neutral-500">
-                현재 {bodyBytes} / {MAX_BYTES}B
-              </p>
-            </div>
+        <p className="mt-3 text-[11px] text-neutral-500">
+          현재 {bodyBytes} / {MAX_BYTES}B
+        </p>
+      </div>
 
-            <p className="text-[11px] text-neutral-500">
-              제출 후 오늘은 다시 제출할 수 없습니다.
-            </p>
+      <p className="text-[11px] text-neutral-500">
+        제출 후 오늘은 다시 제출할 수 없습니다.
+      </p>
+    </div>
 
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleRewrite}
-                className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-800"
-              >
-                다시 쓰기
-              </button>
+    {/* 하단 고정 버튼 영역 */}
+    <div className="sticky bottom-0 mt-3 flex items-center justify-between gap-3 border-t border-neutral-200 bg-white pt-3 pb-2">
+      <button
+        type="button"
+        onClick={handleRewrite}
+        className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-800"
+      >
+        다시 쓰기
+      </button>
 
-              <button
-                type="button"
-                onClick={handleConfirmSubmit}
-                disabled={loading}
-                className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
-              >
-                이대로 제출, 결과보기
-              </button>
-            </div>
-          </div>
-        )}
+      <button
+        type="button"
+        onClick={handleConfirmSubmit}
+        disabled={loading}
+        className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
+      >
+        이대로 제출, 결과보기
+      </button>
+    </div>
+  </div>
+)}
 
         {/* 로딩 */}
-        {phase === "loading" && (
-          <div className="py-8 text-center">
-            <p className="text-sm text-neutral-500">평가 중입니다...</p>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <Dot />
-              <Dot delay={0.15} />
-              <Dot delay={0.3} />
-            </div>
-          </div>
-        )}
+{phase === "loading" && (
+  <div className="py-10 text-center">
+    {/* 수림봇 이모지 */}
+    <div className="mb-4 flex justify-center">
+      <span
+        className="text-4xl sm:text-5xl animate-bounce"
+        role="img"
+        aria-label="수림봇"
+      >
+        🤖
+      </span>
+    </div>
+
+    {/* 로딩 텍스트 */}
+    <p className="text-sm font-medium text-neutral-600">
+      수림봇이 열심히 평가 중입니다…
+    </p>
+
+    {/* 점 3개 애니메이션 */}
+    <div className="mt-6 flex items-center justify-center gap-3">
+      <div className="h-3 w-3 rounded-full bg-sky-500 animate-pulse" />
+      <div className="h-3 w-3 rounded-full bg-indigo-500 animate-pulse delay-150" />
+      <div className="h-3 w-3 rounded-full bg-purple-500 animate-pulse delay-300" />
+    </div>
+
+    <p className="mt-4 text-[11px] text-neutral-400">
+      * 1~2초 정도 소요됩니다.
+    </p>
+  </div>
+)}
 
         {/* 에러 */}
         {phase === "error" && (

@@ -2,7 +2,7 @@
 
 import type { Metadata } from "next";
 import { getEntryById } from "@/lib/db";
-import { getOgCardPath, getScoreBand, type ScoreBand } from "@/lib/og500";
+import { getScoreBand, type ScoreBand } from "@/lib/og500";
 import { EntryShareBar } from "@/components/EntryShareBar";
 
 type PageProps = {
@@ -38,9 +38,36 @@ function getScoreBadgeClass(band: ScoreBand): string {
   }
 }
 
-// OG 이미지 자동 설정
+// 미학 점수 간단 바 컴포넌트
+type MetricBarProps = {
+  label: string;
+  value: number | null | undefined;
+  max?: number;
+};
+
+function MetricBar({ label, value, max = 10 }: MetricBarProps) {
+  if (typeof value !== "number") return null;
+  const ratio = Math.max(0, Math.min(1, value / max));
+
+  return (
+    <div className="flex items-center gap-2 text-[11px] sm:text-xs">
+      <span className="w-16 shrink-0 text-slate-500">{label}</span>
+      <div className="relative h-1.5 flex-1 rounded-full bg-slate-100">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-slate-900/80"
+          style={{ width: `${ratio * 100}%` }}
+        />
+      </div>
+      <span className="w-8 text-right text-[11px] text-slate-500">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+// OG 이미지 자동 설정 (메타데이터)
 export async function generateMetadata(
-  { params }: PageProps
+  { params }: PageProps,
 ): Promise<Metadata> {
   const entry = await getEntryById(params.id);
 
@@ -52,27 +79,35 @@ export async function generateMetadata(
       openGraph: {
         title: "500자 소설",
         description: "내가 쓴 500자 소설을 기록하고 평가하는 서비스",
-        images: ["/og/500/default.png"],
+        images: [
+          {
+            // 실제 존재하는 카드 중 하나를 기본값으로 사용
+            url: "/og/500/unicorn-aqua.png",
+            width: 1200,
+            height: 630,
+          },
+        ],
       },
     };
   }
 
-  const totalScore: number | null = entry.total_score ?? entry.score ?? null;
-
-  const ogImage = getOgCardPath({
-    entryId: entry.id,
-    totalScore,
-  });
-
-  const title = entry.title || "500자 소설";
+  const t = entry.title || "500자 소설";
+  const ogImage =
+    ((entry as any).og_image as string | null) ?? "/og/500/unicorn-aqua.png";
 
   return {
-    title: `500자 소설 – ${title}`,
+    title: `500자 소설 – ${t}`,
     description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
     openGraph: {
-      title,
+      title: t,
       description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
-      images: [ogImage],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+        },
+      ],
     },
   };
 }
@@ -93,17 +128,14 @@ export default async function EntryPage({ params }: PageProps) {
   }
 
   const title: string = entry.title ?? "500자 소설";
-
-  const totalScore: number | null = entry.total_score ?? entry.score ?? null;
+  const totalScore: number | null =
+    (entry.total_score as number | null) ?? (entry.score as number | null) ?? null;
   const band = getScoreBand(totalScore);
-
   const scoreValue =
     typeof totalScore === "number" ? `${totalScore}점` : "점수 없음";
 
   const tags: string[] = Array.isArray(entry.tags) ? entry.tags : [];
   const reasons: string[] = Array.isArray(entry.reasons) ? entry.reasons : [];
-
-  // 본문 필드 매핑
   const bodyText: string = (entry.body as string | null | undefined) ?? "";
 
   const createdAt =
@@ -119,9 +151,91 @@ export default async function EntryPage({ params }: PageProps) {
   const byteCount: number | null =
     typeof entry.byte_count === "number" ? entry.byte_count : null;
 
+  const ogImageUrl: string =
+    ((entry as any).og_image as string | null) ?? "/og/500/unicorn-aqua.png";
+
+      // 미학 점수들 (entry를 느슨하게 캐스팅해서 사용)
+  const ae = entry as {
+    freeze?: number;
+    space?: number;
+    linger?: number;
+    micro_particles?: number;
+    bleak?: number;
+    rhythm?: number;
+    narrative_turn?: number;
+  };
+
+  const freeze =
+    typeof ae.freeze === "number" ? ae.freeze : null;
+  const space =
+    typeof ae.space === "number" ? ae.space : null;
+  const linger =
+    typeof ae.linger === "number" ? ae.linger : null;
+  const microParticles =
+    typeof ae.micro_particles === "number" ? ae.micro_particles : null;
+  const bleak =
+    typeof ae.bleak === "number" ? ae.bleak : null;
+  const rhythm =
+    typeof ae.rhythm === "number" ? ae.rhythm : null;
+  const narrativeTurn =
+    typeof ae.narrative_turn === "number" ? ae.narrative_turn : null;
+
+  const hasAestheticProfile =
+    freeze !== null ||
+    space !== null ||
+    linger !== null ||
+    microParticles !== null ||
+    bleak !== null ||
+    rhythm !== null ||
+    narrativeTurn !== null;
+
   return (
     <main className="flex min-h-screen justify-center bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <article className="w-full max-w-3xl rounded-3xl bg-white px-4 py-6 shadow-sm sm:px-8 sm:py-8">
+        {/* OG 카드 + 상단 CTA 영역 */}
+        {ogImageUrl && (
+          <section className="mb-7">
+            <div className="flex justify-center">
+              <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-slate-100 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={ogImageUrl}
+                  alt={`${title} - 500자 소설 결과 카드`}
+                  className="h-auto w-full"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <p className="text-[11px] text-slate-500 sm:text-xs">
+                이 카드는 카카오톡·X 등에서 공유될 때 사용되는 결과 이미지입니다.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <a
+                  href={ogImageUrl}
+                  download
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 sm:text-[13px]"
+                >
+                  이미지 저장하기
+                </a>
+              </div>
+
+              {/* 공유 버튼 영역 */}
+              <div className="mt-2 w-full max-w-xl">
+                <p className="mb-1 text-center text-[11px] font-medium tracking-wide text-slate-400">
+                  결과 페이지 공유
+                </p>
+                <div className="flex justify-center">
+                  <div className="w-full [&_p]:hidden [&_button]:flex-1 [&_button]:py-2.5 [&_button]:text-[13px] [&_button]:font-medium">
+                    <EntryShareBar title={title} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 헤더 영역 */}
         <header className="mb-6 border-b border-slate-200 pb-5">
           <h1 className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 sm:text-[22px]">
@@ -129,31 +243,26 @@ export default async function EntryPage({ params }: PageProps) {
           </h1>
 
           {/* 메타 정보: 점수 / 바이트 / 작성일 */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs text-slate-600">
-            {/* 점수 뱃지 */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 sm:text-xs">
             <span className={getScoreBadgeClass(band)}>
               {scoreValue} · {getScoreLabel(band)}
             </span>
 
-            {/* 구분선 (데스크탑 이상에서만) */}
             <span className="hidden h-3 w-px bg-slate-200 sm:inline-block" />
 
-            {/* 바이트 수 / 작성일 */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400">
-              {byteCount !== null && (
-                <span>바이트 {byteCount}/500</span>
-              )}
+              {byteCount !== null && <span>바이트 {byteCount}/1250</span>}
               {createdAt && <span>작성일 {createdAt}</span>}
             </div>
           </div>
 
-          {/* 태그: 헤더 하단에 정돈해서 배치 */}
+          {/* 태그 */}
           {tags.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-0.5 text-[11px] sm:text-xs text-slate-700"
+                  className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-0.5 text-[11px] text-slate-700 sm:text-xs"
                 >
                   #{tag}
                 </span>
@@ -161,6 +270,28 @@ export default async function EntryPage({ params }: PageProps) {
             </div>
           )}
         </header>
+
+        {/* 미학 요약 프로필 */}
+        {hasAestheticProfile && (
+          <section className="mb-8 rounded-2xl bg-slate-50 px-4 py-4 sm:px-5 sm:py-5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              이 작품의 문수림 미학 프로필
+            </h2>
+            <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
+              freeze · space · linger를 중심으로, 리듬과 전환, 미립자 감도 등을 한눈에 정리한 요약입니다.
+            </p>
+
+            <div className="mt-3 grid gap-2 sm:gap-2.5">
+              <MetricBar label="freeze" value={freeze} />
+              <MetricBar label="space" value={space} />
+              <MetricBar label="linger" value={linger} />
+              <MetricBar label="micro" value={microParticles} />
+              <MetricBar label="bleak" value={bleak} />
+              <MetricBar label="rhythm" value={rhythm} />
+              <MetricBar label="turn" value={narrativeTurn} />
+            </div>
+          </section>
+        )}
 
         {/* 본문 */}
         <section className="mb-9">
@@ -170,17 +301,16 @@ export default async function EntryPage({ params }: PageProps) {
             </p>
           ) : (
             <p className="text-sm text-slate-400">
-              저장된 본문이 없습니다. (구버전 데이터이거나 마이그레이션이
-              필요할 수 있습니다.)
+              저장된 본문이 없습니다. (구버전 데이터이거나 마이그레이션이 필요할 수 있습니다.)
             </p>
           )}
         </section>
 
         {/* 평가 코멘트 */}
         {reasons.length > 0 && (
-          <section className="mb-8">
+          <section className="mb-6">
             <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              기계 판정 코멘트
+              수림봇 판정 코멘트
             </h2>
             <ul className="list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-slate-700">
               {reasons.map((r, i) => (
@@ -190,12 +320,13 @@ export default async function EntryPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* 공유 바 */}
-        <footer className="mt-6 border-t border-slate-100 pt-4 sm:pt-5">
-          <p className="mb-2 text-[11px] font-medium tracking-wide text-slate-400">
-            이 기록 공유하기
+        {/* 하단 마무리 텍스트 */}
+        <footer className="mt-4 border-t border-slate-100 pt-3">
+          <p className="text-[11px] text-slate-400">
+            위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
+            <br />
+            작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을 보내주세요.
           </p>
-          <EntryShareBar title={title} />
         </footer>
       </article>
     </main>

@@ -1,19 +1,38 @@
 // File: src/lib/og500.ts
 
+// ===========================
+// 기본 타입
+// ===========================
+
+// 점수 밴드 (색상대)
 export type ScoreBand = "amber" | "purple" | "aqua";
 
-type OgAnimal = "unicorn" | "griffin" | "wolf" | "basilisk";
+// OG에 쓰이는 동물 타입
+export type OgAnimal = "unicorn" | "griffin" | "wolf" | "basilisk";
 
-type OgCategoryKey = `${ScoreBand}_${OgAnimal}`;
+// 문수림 미학 점수 타입
+export type AestheticScores = {
+  freeze: number;
+  space: number;
+  linger: number;
+  microParticles: number;
+  bleak: number;
+  rhythm: number;
+  narrativeTurn: number;
+  aggroToArt: number;
+};
 
-const OG_ANIMALS: OgAnimal[] = ["unicorn", "griffin", "wolf", "basilisk"];
+// OG 카드 최종 반환 타입
+export type OgCardResult = {
+  path: string;        // "/og/500/unicorn-amber.png"
+  creature: OgAnimal;  // "unicorn"
+  color: ScoreBand;    // "amber"
+};
 
-/**
- * 점수 → 색상 밴드
- * 70점 이상: amber
- * 40점 이상: purple
- * 그 외 / 점수 없음: aqua
- */
+
+// ===========================
+// 점수 → 색 밴드
+// ===========================
 export function getScoreBand(score: number | null | undefined): ScoreBand {
   if (typeof score !== "number") return "aqua";
   if (score >= 70) return "amber";
@@ -21,10 +40,44 @@ export function getScoreBand(score: number | null | undefined): ScoreBand {
   return "aqua";
 }
 
-/**
- * entryId 기반 동물 선택
- * - 같은 id는 항상 같은 동물로 매핑되게 간단 해시 사용
- */
+
+// ===========================
+// (새 버전) 문수림 미학 기반 동물 선택
+// ===========================
+function pickAnimalByAesthetic(a: AestheticScores): OgAnimal {
+  const {
+    freeze,
+    space,
+    linger,
+    microParticles,
+    bleak,
+    rhythm,
+    narrativeTurn,
+    aggroToArt,
+  } = a;
+
+  // 1) AggroToArt 감지 → 바실리스크
+  if (aggroToArt >= 1) return "basilisk";
+
+  // 2) 정지-공간-여운 합산 → 유니콘
+  if (freeze + space + linger >= 28) return "unicorn";
+
+  // 3) 미립자 + 서늘함 → 울프
+  if (microParticles >= 12 && bleak >= 4) return "wolf";
+
+  // 4) 리듬 + 전환 → 그리핀
+  if (rhythm >= 8 && narrativeTurn >= 5) return "griffin";
+
+  // 5) 기본값 → 그리핀
+  return "griffin";
+}
+
+
+// ===========================
+// (레거시 fallback) entryId 기반 동물 결정
+// ===========================
+const OG_ANIMALS: OgAnimal[] = ["unicorn", "griffin", "wolf", "basilisk"];
+
 function pickAnimalByEntryId(entryId: string | null | undefined): OgAnimal {
   if (!entryId) return "unicorn";
 
@@ -32,52 +85,67 @@ function pickAnimalByEntryId(entryId: string | null | undefined): OgAnimal {
   for (const ch of entryId) {
     hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
   }
-
   const idx = hash % OG_ANIMALS.length;
   return OG_ANIMALS[idx];
 }
 
-/**
- * band + animal 조합별 내부 코드 / 레이블
- * (지금은 문서/큐레이션용 참고 정보. 필요하면 UI에서 써도 됨)
- */
-export const OG_CATEGORY_META: Record<
-  OgCategoryKey,
-  { code: string; labelKo: string }
-> = {
-  // AMBER 라인 (고득점)
-  amber_unicorn: { code: "AMBER_UNICORN", labelKo: "정교한 감성형" },
-  amber_griffin: { code: "AMBER_GRIFFIN", labelKo: "구조적 장인형" },
-  amber_wolf: { code: "AMBER_WOLF", labelKo: "리듬 좋은 서사형" },
-  amber_basilisk: { code: "AMBER_BASILISK", labelKo: "완성도 높은 파격형" },
 
-  // PURPLE 라인 (준수)
-  purple_unicorn: { code: "PURPLE_UNICORN", labelKo: "감성 중심 준수형" },
-  purple_griffin: { code: "PURPLE_GRIFFIN", labelKo: "틀은 좋은 설계형" },
-  purple_wolf: { code: "PURPLE_WOLF", labelKo: "서사 중심 준수형" },
-  purple_basilisk: { code: "PURPLE_BASILISK", labelKo: "안전한 실험형" },
+// ===========================
+// 공용: 동물 최종 선택
+// ===========================
+export function decideOgAnimal(params: {
+  aesthetic?: Partial<AestheticScores> | null;
+  entryId?: string | null;
+}): OgAnimal {
+  const { aesthetic, entryId } = params;
 
-  // AQUA 라인 (실험 / 저득점)
-  aqua_unicorn: { code: "AQUA_UNICORN", labelKo: "날것 감성형" },
-  aqua_griffin: { code: "AQUA_GRIFFIN", labelKo: "설계 전초형" },
-  aqua_wolf: { code: "AQUA_WOLF", labelKo: "동력 먼저 서사형" },
-  aqua_basilisk: { code: "AQUA_BASILISK", labelKo: "거친 실험형" },
-};
+  if (aesthetic) {
+    // 부분 값 들어와도 안전보정
+    const full: AestheticScores = {
+      freeze: aesthetic.freeze ?? 0,
+      space: aesthetic.space ?? 0,
+      linger: aesthetic.linger ?? 0,
+      microParticles: aesthetic.microParticles ?? 0,
+      bleak: aesthetic.bleak ?? 0,
+      rhythm: aesthetic.rhythm ?? 0,
+      narrativeTurn: aesthetic.narrativeTurn ?? 0,
+      aggroToArt: aesthetic.aggroToArt ?? 0,
+    };
+    return pickAnimalByAesthetic(full);
+  }
 
-/**
- * 점수 + entryId 기반 OG 카드 경로
- * - 점수 → 색상 밴드
- * - entryId → 동물
- * - 최종 파일명: /og/500/{animal}-{band}.png
- */
-export function getOgCardPath(params: {
-  entryId: string;
+  // 없으면 기존 방식 사용
+  return pickAnimalByEntryId(entryId ?? null);
+}
+
+
+// ===========================
+// OG 카드 경로 생성 (확장형)
+// ===========================
+
+export function getOgCardDetail(params: {
   totalScore: number | null;
-}): string {
-  const { entryId, totalScore } = params;
+  aesthetic?: Partial<AestheticScores> | null;
+  entryId?: string | null;
+}): {
+  path: string;
+  creature: OgAnimal;
+  color: ScoreBand;
+} {
+  const { totalScore, aesthetic, entryId } = params;
 
+  // 색상 밴드
   const band = getScoreBand(totalScore);
-  const animal = pickAnimalByEntryId(entryId);
 
-  return `/og/500/${animal}-${band}.png`;
+  // 동물 (문수림 미학 > entryId fallback)
+  const animal = decideOgAnimal({ aesthetic, entryId });
+
+  // 최종 이미지 경로
+  const path = `/og/500/${animal}-${band}.png`;
+
+  return {
+    path,
+    creature: animal,
+    color: band,
+  };
 }
