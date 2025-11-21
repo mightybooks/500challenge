@@ -10,8 +10,8 @@ type ResultCardProps = {
 
 function getScoreBand(score: number | null): "amber" | "purple" | "aqua" {
   if (typeof score !== "number") return "aqua";
-  if (score >= 70) return "amber";
-  if (score >= 40) return "purple";
+  if (score >= 80) return "amber";
+  if (score >= 45) return "purple";
   return "aqua";
 }
 

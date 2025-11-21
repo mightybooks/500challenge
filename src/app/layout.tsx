@@ -4,17 +4,32 @@ import "@/styles/tokens.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  title: "500자 소설 챌린지 | 수림스튜디오",
+  description:
+    "500자 안에 당신만의 소설을 써보세요. 수림봇이 문수림 미학 기준으로 점수를 매기고, 공유 가능한 카드까지 만들어 드립니다.",
   metadataBase: new URL("https://500challenge.vercel.app"),
-  title: {
-    default: "500자 소설 챌린지",
-    template: "%s | 500자 소설 챌린지",
-  },
-  description: "500자 안에 압축된 이야기들.",
   openGraph: {
-    type: "website",
-    title: "500자 소설 챌린지",
-    description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
+    title: "500자 소설 챌린지 | 수림스튜디오",
+    description:
+      "짧게 쓰고, 깊게 남기는 500자 소설 챌린지. 지금 바로 첫 작품을 제출해보세요.",
     url: "https://500challenge.vercel.app",
+    siteName: "500자 소설 챌린지",
+    images: [
+      {
+        url: "/og-500challenge.png", // public 아래라 이렇게만 써도 됨
+        width: 1200,
+        height: 630,
+        alt: "500자 소설 챌린지 대표 이미지",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "500자 소설 챌린지 | 수림스튜디오",
+    description:
+      "500자 초단편을 쓰고, 수림봇에게 평가받는 플레이그라운드.",
+    images: ["/og-500challenge.png"],
   },
 };
 

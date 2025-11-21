@@ -55,7 +55,7 @@ function MetricBar({ label, value, max = 10 }: MetricBarProps) {
       <span className="w-16 shrink-0 text-slate-500">{label}</span>
       <div className="relative h-1.5 flex-1 rounded-full bg-slate-100">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-amber-400/80" 
+          className="absolute inset-y-0 left-0 rounded-full bg-amber-400/80"
           style={{ width: `${ratio * 100}%` }}
         />
       </div>
@@ -130,7 +130,9 @@ export default async function EntryPage({ params }: PageProps) {
 
   const title: string = entry.title ?? "500자 소설";
   const totalScore: number | null =
-    (entry.total_score as number | null) ?? (entry.score as number | null) ?? null;
+    (entry.total_score as number | null) ??
+    (entry.score as number | null) ??
+    null;
   const band = getScoreBand(totalScore);
   const scoreValue =
     typeof totalScore === "number" ? `${totalScore}점` : "점수 없음";
@@ -155,40 +157,48 @@ export default async function EntryPage({ params }: PageProps) {
   const ogImageUrl: string =
     ((entry as any).og_image as string | null) ?? "/og/500/unicorn-aqua.png";
 
-      // 미학 점수들 (entry를 느슨하게 캐스팅해서 사용)
+  // 미학 점수들 (entry를 느슨하게 캐스팅해서 사용)
   const ae = entry as {
+    first_sentence?: number;
     freeze?: number;
     space?: number;
     linger?: number;
-    micro_particles?: number;
     bleak?: number;
+    detour?: number;
+    micro_recovery?: number;
     rhythm?: number;
-    narrative_turn?: number;
+    micro_particles?: number;
   };
 
+  const firstSentence =
+    typeof ae.first_sentence === "number" ? ae.first_sentence : null;
   const freeze =
     typeof ae.freeze === "number" ? ae.freeze : null;
   const space =
     typeof ae.space === "number" ? ae.space : null;
   const linger =
     typeof ae.linger === "number" ? ae.linger : null;
-  const microParticles =
-    typeof ae.micro_particles === "number" ? ae.micro_particles : null;
   const bleak =
     typeof ae.bleak === "number" ? ae.bleak : null;
+  const detour =
+    typeof ae.detour === "number" ? ae.detour : null;
+  const microRecovery =
+    typeof ae.micro_recovery === "number" ? ae.micro_recovery : null;
   const rhythm =
     typeof ae.rhythm === "number" ? ae.rhythm : null;
-  const narrativeTurn =
-    typeof ae.narrative_turn === "number" ? ae.narrative_turn : null;
+  const microParticles =
+    typeof ae.micro_particles === "number" ? ae.micro_particles : null;
 
   const hasAestheticProfile =
+    firstSentence !== null ||
     freeze !== null ||
     space !== null ||
     linger !== null ||
-    microParticles !== null ||
     bleak !== null ||
+    detour !== null ||
+    microRecovery !== null ||
     rhythm !== null ||
-    narrativeTurn !== null;
+    microParticles !== null;
 
   return (
     <main className="flex min-h-screen justify-center bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
@@ -279,17 +289,19 @@ export default async function EntryPage({ params }: PageProps) {
               이 작품의 문수림 미학 프로필
             </h2>
             <p className="mt-1 text-[11px] text-slate-500 sm:text-xs">
-              freeze · space · linger를 중심으로, 리듬과 전환, 미립자 감도 등을 한눈에 정리한 요약입니다.
+              문수림의 정서적 미립자 확산형 서술 구조와 저강도곡선 구성 요소를 5점 만점 기준으로 정리한 요약입니다.
             </p>
 
             <div className="mt-3 grid gap-2 sm:gap-2.5">
-              <MetricBar label="정지" value={freeze} />
-              <MetricBar label="공간화" value={space} />
-              <MetricBar label="여운" value={linger} />
-              <MetricBar label="미립자 감각" value={microParticles} />
-              <MetricBar label="암담도" value={bleak} />
-              <MetricBar label="리듬" value={rhythm} />
-              <MetricBar label="전환" value={narrativeTurn} />
+              <MetricBar label="첫 문장" value={firstSentence} max={5} />
+              <MetricBar label="정지" value={freeze} max={5} />
+              <MetricBar label="공간화" value={space} max={5} />
+              <MetricBar label="여운" value={linger} max={5} />
+              <MetricBar label="암담 인식" value={bleak} max={5} />
+              <MetricBar label="우회" value={detour} max={5} />
+              <MetricBar label="미세 회복" value={microRecovery} max={5} />
+              <MetricBar label="리듬" value={rhythm} max={5} />
+              <MetricBar label="정서 미립자" value={microParticles} max={5} />
             </div>
           </section>
         )}
@@ -320,40 +332,39 @@ export default async function EntryPage({ params }: PageProps) {
             </ul>
           </section>
         )}
-    
+
         {/* 하단 마무리 텍스트 */}
         <footer className="mt-6 border-t border-slate-100 pt-4">
           <p className="text-[11px] text-slate-400 leading-relaxed">
-          위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
-          <br />
-          작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을 보내주세요.
+            위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
+            <br />
+            작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을 보내주세요.
           </p>
 
-        {/* 버튼 영역 */}
-        <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:justify-end">
-
-          {/* 내 기록 보기 */}
-          <Link
-            href="/my"
-            className="inline-flex items-center justify-center rounded-lg 
+          {/* 버튼 영역 */}
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            {/* 내 기록 보기 */}
+            <Link
+              href="/my"
+              className="inline-flex items-center justify-center rounded-lg 
                        bg-[#3a302c] hover:bg-[#2f2723]
                        px-4 py-2 text-white text-sm font-medium transition"
-          >
-            내 기록 보기
-          </Link>
+            >
+              내 기록 보기
+            </Link>
 
-          {/* 수림스튜디오로 보내기 — 비활성 (stub) */}
-          <button
-            disabled
-            className="inline-flex items-center justify-center rounded-lg 
+            {/* 수림스튜디오로 보내기 — 비활성 (stub) */}
+            <button
+              disabled
+              className="inline-flex items-center justify-center rounded-lg 
                        bg-[#2F5D46] hover:bg-[#264E39]
                        px-4 py-2 text-white text-sm font-medium transition
                        opacity-70 cursor-not-allowed"
-          >
-            수림스튜디오로 보내기 (준비중)
-          </button>
-        </div>
-       </footer>
+            >
+              수림스튜디오로 보내기 (준비중)
+            </button>
+          </div>
+        </footer>
       </article>
     </main>
   );

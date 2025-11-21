@@ -320,7 +320,7 @@ export default function EditorPage() {
       >
         {/* 확인 단계 */}
       {phase === "confirm" && (
-    <div className="flex min-h-[60vh] flex-col">
+  <div className="flex max-h-[70vh] flex-col">
     {/* 스크롤 되는 내용 영역 */}
     <div className="flex-1 space-y-4 overflow-y-auto py-4 pr-1">
       <h2 className="text-sm font-semibold text-neutral-900">
@@ -348,8 +348,8 @@ export default function EditorPage() {
       </p>
     </div>
 
-    {/* 하단 고정 버튼 영역 */}
-    <div className="sticky bottom-0 mt-3 flex items-center justify-between gap-3 border-t border-neutral-200 bg-white pt-3 pb-2">
+    {/* 하단 버튼 영역 (고정 역할) */}
+    <div className="mt-3 flex items-center justify-between gap-3 border-t border-neutral-200 bg-white pt-3 pb-2">
       <button
         type="button"
         onClick={handleRewrite}

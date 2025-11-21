@@ -10,23 +10,23 @@ import { getOgCardDetail } from "@/lib/og500";
 // ================================
 
 type SurimEval = {
-  // 미학 68점
-  firstSentence: number;   // 0~8
-  freeze: number;          // 0~10
-  space: number;           // 0~10
-  linger: number;          // 0~10
-  bleak: number;           // 0~6
-  detour: number;          // 0~8
-  microRecovery: number;   // 0~6
-  rhythm: number;          // 0~4
-  microParticles: number;  // 0~6
+  // 미학 45점 (각 항목 0~5)
+  firstSentence: number;   // 0~5
+  freeze: number;          // 0~5
+  space: number;           // 0~5
+  linger: number;          // 0~5
+  bleak: number;           // 0~5
+  detour: number;          // 0~5
+  microRecovery: number;   // 0~5
+  rhythm: number;          // 0~5
+  microParticles: number;  // 0~5
 
-  // 서사 22점(휴리스틱)
-  narrativeCompression: number; // 0~8
-  narrativeTurn: number;        // 0~6
+  // 서사 구조 (최대 45점 = base 0/10/20 + 구조 0~25)
+  narrativeCompression: number; // 0~10
+  narrativeTurn: number;        // 0~8
   narrativeClutter: number;     // 0~4
-  narrativeRhythm: number;      // 0~4
-  narrativeScore: number;       // 0~22
+  narrativeRhythm: number;      // 0~3
+  narrativeScore: number;       // 0~45 (base + 구조)
 
   // 창의성·OG 10점
   layer: number;           // 0~4
@@ -34,8 +34,8 @@ type SurimEval = {
   theme: number;           // 0~3
   creativityScore: number; // 0~10
 
-  // 총점
-  totalScore: number;      // 0~100
+  // 총점 0~100
+  totalScore: number;
 };
 
 type EvalResult = {
@@ -54,25 +54,95 @@ function toScore(raw: any, min: number, max: number): number {
 }
 
 // ================================
-// 1) 서사 구조 heuristic (22점)
+// 1) 서사 구조 heuristic (v2.1)
 // ================================
-function evaluateNarrativeStructure(body: string) {
-  const sentences = body
-    .split(/(?<=[\.!?])\s+/)
+
+function splitSentences(body: string): string[] {
+  return body
+    .split(/[\n\r]+|(?<=[\.!?…])\s+/)
     .map((s) => s.trim())
     .filter(Boolean);
+}
 
+function tokenizeKo(body: string): string[] {
+  // 아주 거친 토크나이즈: 공백 기준 + 기호 제거
+  return body
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .map((w) =>
+      w
+        .replace(/[0-9\p{P}\p{S}]+/gu, "")
+        .toLowerCase()
+        .trim(),
+    )
+    .filter((w) => w.length > 0);
+}
+
+function evaluateNarrativeStructure(body: string) {
+  const sentences = splitSentences(body);
   const sentenceCount = sentences.length;
-  const words = body.split(/\s+/).filter(Boolean);
 
-  // (1) 구조 압축도 (8)
-  let structureCompression = 0;
-  if (sentenceCount >= 3 && sentenceCount <= 7) structureCompression = 8;
-  else if (sentenceCount === 2 || sentenceCount === 8) structureCompression = 5;
-  else if (sentenceCount === 1 || sentenceCount >= 9) structureCompression = 3;
-  else structureCompression = 4;
+  const tokens = tokenizeKo(body);
+  const tokenCount = tokens.length;
+  const uniqueTokens = new Set(tokens);
+  const diversity = tokenCount > 0 ? uniqueTokens.size / tokenCount : 0;
 
-  // (2) 전환점 (6)
+  // 사건 힌트 단어들 (손으로 고른 몇 개)
+  const eventVerbs = [
+    "터졌",
+    "터진",
+    "열렸",
+    "닫혔",
+    "죽었",
+    "죽는",
+    "살아났",
+    "살아난",
+    "만났",
+    "마주쳤",
+    "사라졌",
+    "사라진",
+    "나갔",
+    "들어왔",
+    "떨어졌",
+    "부서졌",
+    "울었",
+    "웃었",
+    "뛰었",
+    "왔다",
+    "갔다",
+    "흘렀",
+    "흘러",
+    "흘렀다",
+  ];
+  const hasEvent = eventVerbs.some((v) => body.includes(v));
+
+  // -----------------------------
+  // (1) 압축도: narrativeCompression (0~10)
+  // -----------------------------
+  let compressionBase = 0;
+  if (sentenceCount === 0) {
+    compressionBase = 0;
+  } else if (sentenceCount === 1) {
+    compressionBase = 4;
+  } else if (sentenceCount >= 2 && sentenceCount <= 4) {
+    compressionBase = 8;
+  } else if (sentenceCount >= 5 && sentenceCount <= 7) {
+    compressionBase = 6;
+  } else {
+    compressionBase = 3;
+  }
+
+  let narrativeCompression = compressionBase;
+  if (tokenCount < 5 || diversity < 0.5) {
+    // 의미 밀도가 너무 낮으면 0점
+    narrativeCompression = 0;
+  }
+  if (narrativeCompression > 10) narrativeCompression = 10;
+
+  // -----------------------------
+  // (2) 전환: narrativeTurn (0~8)
+  // -----------------------------
   const transitionWords = [
     "하지만",
     "그러나",
@@ -81,102 +151,150 @@ function evaluateNarrativeStructure(body: string) {
     "그래서",
     "반면",
     "그러고는",
+    "그러자",
+    "그래도",
+    "그러니까",
   ];
-  let transitionScore = 0;
 
-  if (transitionWords.some((w) => body.includes(w))) transitionScore += 2;
-
-  if (sentenceCount > 1) {
-    const lengths = sentences.map((s) => s.length);
-    const diff = Math.abs(lengths[0] - lengths[lengths.length - 1]);
-    if (diff >= 15) transitionScore += 2;
+  let transitionHits = 0;
+  for (const w of transitionWords) {
+    const parts = body.split(w);
+    if (parts.length > 1) {
+      transitionHits += parts.length - 1;
+    }
   }
 
-  if (sentenceCount > 1) {
-    const starts = sentences.map((s) => s.split(/\s+/)[0] || "");
-    const unique = new Set(starts);
-    if (unique.size >= 2) transitionScore += 2;
+  let narrativeTurn = 0;
+  if (hasEvent) {
+    if (transitionHits === 0) {
+      narrativeTurn = 0;
+    } else if (transitionHits === 1) {
+      narrativeTurn = 3;
+    } else if (transitionHits === 2) {
+      narrativeTurn = 5;
+    } else if (transitionHits === 3) {
+      narrativeTurn = 6;
+    } else {
+      // 전환어가 과도하게 많으면 오히려 0점 처리
+      narrativeTurn = 0;
+    }
+
+    // 첫 문장 / 마지막 문장 길이 차이로 구조적 전환 보너스
+    if (sentenceCount > 1 && narrativeTurn > 0) {
+      const firstLen = sentences[0].length;
+      const lastLen = sentences[sentences.length - 1].length;
+      const diff = Math.abs(firstLen - lastLen);
+      if (diff >= 20) {
+        narrativeTurn = Math.min(8, narrativeTurn + 1);
+      }
+    }
+  } else {
+    // 사건이 아예 없으면 전환 점수 의미 없음
+    narrativeTurn = 0;
   }
 
-  if (transitionScore > 6) transitionScore = 6;
+  // -----------------------------
+  // (3) 군더더기: narrativeClutter (0~4)
+  // -----------------------------
+  let narrativeClutter = 4;
 
-  // (3) 군더더기 (4)
-  let clutterBase = 4;
-  const repeated = words.filter((w, i, arr) => arr.indexOf(w) !== i);
-  if (repeated.length > 3) clutterBase -= 1;
+  // 같은 단어 반복이 많으면 군더더기 증가 → 점수 감소
+  if (tokenCount > 0) {
+    const counts: Record<string, number> = {};
+    for (const t of tokens) {
+      counts[t] = (counts[t] || 0) + 1;
+    }
+    const repeated = Object.values(counts).filter((n) => n >= 3).length;
+    if (repeated >= 2) {
+      narrativeClutter -= 2;
+    } else if (repeated === 1) {
+      narrativeClutter -= 1;
+    }
+  }
 
+  // 너무 긴 문장이 많으면 군더더기 취급
+  const longSentences = sentences.filter((s) => s.length > 120).length;
+  if (longSentences >= 2) {
+    narrativeClutter -= 2;
+  } else if (longSentences === 1) {
+    narrativeClutter -= 1;
+  }
+
+  // 부사 과다
   const adverbs = ["정말", "매우", "갑자기", "사실", "마침", "살짝"];
-  if (adverbs.some((w) => body.includes(w))) clutterBase -= 1;
+  if (adverbs.some((w) => body.includes(w))) {
+    narrativeClutter -= 1;
+  }
 
-  const longSentences = sentences.filter((s) => s.length > 80).length;
-  if (longSentences >= 2) clutterBase -= 1;
-  if (clutterBase < 0) clutterBase = 0;
+  if (narrativeClutter < 0) narrativeClutter = 0;
+  if (narrativeClutter > 4) narrativeClutter = 4;
 
-  // (4) 리듬 패턴 (4)
-  let rhythmScore = 4;
-  if (sentenceCount >= 2) {
+  // -----------------------------
+  // (4) 리듬: narrativeRhythm (0~3)
+  // -----------------------------
+  let narrativeRhythm = 2;
+
+  if (sentenceCount <= 1) {
+    narrativeRhythm = 1;
+  } else {
     const lens = sentences.map((s) => s.length);
     const avg = lens.reduce((a, b) => a + b, 0) / lens.length;
-
     const variance =
       lens.reduce((sum, len) => sum + (len - avg) ** 2, 0) / lens.length;
     const std = Math.sqrt(variance);
 
-    if (std > 40) rhythmScore -= 1;
-
-    const startWords = sentences.map((s) => s.split(/\s+/)[0] || "");
-    const count: Record<string, number> = {};
-    startWords.forEach((w) => (count[w] = (count[w] || 0) + 1));
-    if (Object.values(count).some((n) => n >= 3)) rhythmScore -= 1;
+    if (std >= 10 && std <= 60) {
+      narrativeRhythm = 3; // 적당한 변주
+    } else if (std < 5 || std > 80) {
+      narrativeRhythm = 1; // 너무 균질하거나 난장판
+    } else {
+      narrativeRhythm = 2;
+    }
   }
 
-  if (rhythmScore < 0) rhythmScore = 0;
+  // -----------------------------
+  // 구조 합산 (0~25), 사건 없으면 상한 8
+  // -----------------------------
+  let structureScore =
+    narrativeCompression + narrativeTurn + narrativeClutter + narrativeRhythm;
 
-  const total =
-    structureCompression + transitionScore + clutterBase + rhythmScore;
+  if (!hasEvent && structureScore > 8) {
+    structureScore = 8;
+  }
+
+  if (structureScore < 0) structureScore = 0;
+  if (structureScore > 25) structureScore = 25;
 
   return {
-    structureCompression,
-    transitionScore,
-    clutterBase,
-    rhythmScore,
-    total,
+    narrativeCompression,
+    narrativeTurn,
+    narrativeClutter,
+    narrativeRhythm,
+    structureScore,
   };
 }
 
 // ================================
 // 2) Fallback heuristic (키 없거나 GPT 실패)
 // ================================
+
 function fallbackEvaluate(body: string): EvalResult {
   const byteCount = new TextEncoder().encode(body).length;
 
-  // 길이 기반 대충 점수
-  const lenScore = Math.max(
-    0,
-    Math.min(68, Math.round((byteCount / 1250) * 68)),
-  );
+  // 미학 0~5 대충 분배 (길이에 따른 대략값)
+  const lengthRatio = Math.min(1, byteCount / 1250);
+  const base = Math.round(2 + lengthRatio * 2); // 2~4 근처
+  const clamp5 = (n: number) => Math.max(0, Math.min(5, n));
 
-  const punctuation = (body.match(/[.!?…]/g) || []).length;
-  const hasLine = /\n/.test(body) ? 1 : 0;
-
-  const {
-    structureCompression,
-    transitionScore,
-    clutterBase,
-    rhythmScore,
-    total: narrativeTotal,
-  } = evaluateNarrativeStructure(body);
-
-  // 미학 68점 대충 분배
-  const firstSentence = Math.min(8, Math.round(lenScore * 0.1));
-  const freeze = Math.min(10, Math.round(lenScore * 0.15));
-  const space = Math.min(10, Math.round(lenScore * 0.12));
-  const linger = Math.min(10, Math.round(lenScore * 0.12));
-  const bleak = Math.min(6, punctuation >= 2 ? 4 : 2);
-  const detour = Math.min(8, hasLine ? 5 : 3);
-  const microRecovery = Math.min(6, 3);
-  const rhythm = Math.min(4, punctuation >= 2 ? 3 : 2);
-  const microParticles = Math.min(6, 3);
+  const firstSentence = clamp5(base);
+  const freeze = clamp5(base + 1);
+  const space = clamp5(base);
+  const linger = clamp5(base);
+  const bleak = clamp5(base - 1);
+  const detour = clamp5(base);
+  const microRecovery = clamp5(base - 1);
+  const rhythm = clamp5(base);
+  const microParticles = clamp5(base);
 
   const aestheticTotal =
     firstSentence +
@@ -189,16 +307,29 @@ function fallbackEvaluate(body: string): EvalResult {
     rhythm +
     microParticles;
 
-  // OG 10점 대충
+  // 서사 구조 휴리스틱
+  const {
+    narrativeCompression,
+    narrativeTurn,
+    narrativeClutter,
+    narrativeRhythm,
+    structureScore,
+  } = evaluateNarrativeStructure(body);
+
+  // 바이트 기반 베이스
+  const narrativeBase =
+    byteCount < 700 ? 0 : byteCount <= 1149 ? 10 : 20;
+
+  const narrativeScore = narrativeBase + structureScore;
+
+  // OG / 창의성 대충 (0~10)
   const layer = 3;
   const world = 3;
   const theme = 2;
   const creativityScore = Math.min(10, layer + world + theme);
 
-  const totalScore = Math.max(
-    0,
-    Math.min(100, aestheticTotal + narrativeTotal + creativityScore),
-  );
+  const totalScoreRaw = aestheticTotal + narrativeScore + creativityScore;
+  const totalScore = Math.max(0, Math.min(100, totalScoreRaw));
 
   const surimEval: SurimEval = {
     firstSentence,
@@ -210,11 +341,11 @@ function fallbackEvaluate(body: string): EvalResult {
     microRecovery,
     rhythm,
     microParticles,
-    narrativeCompression: structureCompression,
-    narrativeTurn: transitionScore,
-    narrativeClutter: clutterBase,
-    narrativeRhythm: rhythmScore,
-    narrativeScore: narrativeTotal,
+    narrativeCompression,
+    narrativeTurn,
+    narrativeClutter,
+    narrativeRhythm,
+    narrativeScore,
     layer,
     world,
     theme,
@@ -239,6 +370,7 @@ function fallbackEvaluate(body: string): EvalResult {
 // ================================
 // 3) GPT 기반 평가 (chat.completions + JSON)
 // ================================
+
 async function evaluateWithGPT(
   title: string,
   body: string,
@@ -249,22 +381,22 @@ async function evaluateWithGPT(
   const system = `
 당신은 '수림봇'입니다.
 입력된 500~1250바이트 한글 초단편을
-1) 문수림 미학 68점
+1) 문수림 미학 45점
 2) 창의성·OG 10점
 체계로 정량 평가합니다.
 
 각 항목의 최대치는 다음과 같습니다.
 
-[미학 점수: 68점 만점]
-- firstSentence: 0~8          (첫 문장 흡입력)
-- freeze: 0~10                (정지)
-- space: 0~10                 (공간화)
-- linger: 0~10                (여운)
-- bleak: 0~6                  (암담 인식)
-- detour: 0~8                 (우회)
-- microRecovery: 0~6          (미세 회복)
-- rhythm: 0~4                 (문장·리듬)
-- microParticles: 0~6         (정서적 미립자)
+[미학 점수: 45점 만점]
+- firstSentence: 0~5          (첫 문장 흡입력)
+- freeze: 0~5                 (정지)
+- space: 0~5                  (공간화)
+- linger: 0~5                 (여운)
+- bleak: 0~5                  (암담 인식)
+- detour: 0~5                 (우회)
+- microRecovery: 0~5          (미세 회복)
+- rhythm: 0~5                 (문장·리듬)
+- microParticles: 0~5         (정서적 미립자)
 
 [창의성·OG 점수: 10점 만점]
 - layer: 0~4                  (의미 단층)
@@ -292,7 +424,6 @@ async function evaluateWithGPT(
     `  "layer": number,\n` +
     `  "world": number,\n` +
     `  "theme": number,\n` +
-    `  "totalScore": number,\n` +
     `  "tags": string[],\n` +
     `  "reasons": string[]\n` +
     `}`;
@@ -332,22 +463,16 @@ async function evaluateWithGPT(
     throw new Error("JSON 파싱 실패");
   }
 
-  // 미학 68 + OG 10 파싱
-  const firstSentence = toScore(parsed.firstSentence, 0, 8);
-  const freeze = toScore(parsed.freeze, 0, 10);
-  const space = toScore(parsed.space, 0, 10);
-  const linger = toScore(parsed.linger, 0, 10);
-  const bleak = toScore(parsed.bleak, 0, 6);
-  const detour = toScore(parsed.detour, 0, 8);
-  const microRecovery = toScore(parsed.microRecovery, 0, 6);
-  const rhythm = toScore(parsed.rhythm, 0, 4);
-  const microParticles = toScore(parsed.microParticles, 0, 6);
-
-  const layer = toScore(parsed.layer, 0, 4);
-  const world = toScore(parsed.world, 0, 3);
-  const theme = toScore(parsed.theme, 0, 3);
-
-  const og10 = Math.min(10, layer + world + theme);
+  // 미학 45점 (각 0~5)
+  const firstSentence = toScore(parsed.firstSentence, 0, 5);
+  const freeze = toScore(parsed.freeze, 0, 5);
+  const space = toScore(parsed.space, 0, 5);
+  const linger = toScore(parsed.linger, 0, 5);
+  const bleak = toScore(parsed.bleak, 0, 5);
+  const detour = toScore(parsed.detour, 0, 5);
+  const microRecovery = toScore(parsed.microRecovery, 0, 5);
+  const rhythm = toScore(parsed.rhythm, 0, 5);
+  const microParticles = toScore(parsed.microParticles, 0, 5);
 
   const aestheticTotal =
     firstSentence +
@@ -360,17 +485,29 @@ async function evaluateWithGPT(
     rhythm +
     microParticles;
 
-  // 서사 구조 22점은 휴리스틱으로
+  // 창의성 10점
+  const layer = toScore(parsed.layer, 0, 4);
+  const world = toScore(parsed.world, 0, 3);
+  const theme = toScore(parsed.theme, 0, 3);
+  const creativityScore = Math.min(10, layer + world + theme);
+
+  // 서사 구조 25점 휴리스틱
   const {
-    structureCompression,
-    transitionScore,
-    clutterBase,
-    rhythmScore,
-    total: narrativeTotal,
+    narrativeCompression,
+    narrativeTurn,
+    narrativeClutter,
+    narrativeRhythm,
+    structureScore,
   } = evaluateNarrativeStructure(body);
 
-  // 총점
-  let totalScore = aestheticTotal + narrativeTotal + og10;
+  // 바이트 기반 베이스 (0 / 10 / 20)
+  const narrativeBase =
+    byteCount < 700 ? 0 : byteCount <= 1149 ? 10 : 20;
+
+  const narrativeScore = narrativeBase + structureScore;
+
+  // 총점 (0~100)
+  let totalScore = aestheticTotal + narrativeScore + creativityScore;
   totalScore = Math.max(0, Math.min(100, totalScore));
 
   const tags: string[] = Array.isArray(parsed.tags)
@@ -392,15 +529,15 @@ async function evaluateWithGPT(
     microRecovery,
     rhythm,
     microParticles,
-    narrativeCompression: structureCompression,
-    narrativeTurn: transitionScore,
-    narrativeClutter: clutterBase,
-    narrativeRhythm: rhythmScore,
-    narrativeScore: narrativeTotal,
+    narrativeCompression,
+    narrativeTurn,
+    narrativeClutter,
+    narrativeRhythm,
+    narrativeScore,
     layer,
     world,
     theme,
-    creativityScore: og10,
+    creativityScore,
     totalScore,
   };
 
@@ -416,6 +553,7 @@ async function evaluateWithGPT(
 // ================================
 // 4) 평가 엔트리 포인트 (키 유무 판단)
 // ================================
+
 async function evaluate(title: string, body: string): Promise<EvalResult> {
   const key = process.env.OPENAI_API_KEY;
   if (!key) {
@@ -433,6 +571,7 @@ async function evaluate(title: string, body: string): Promise<EvalResult> {
 // ================================
 // 5) 날짜 유틸 (KST 기준)
 // ================================
+
 function getKstYmd(): string {
   const now = new Date();
   const kstString = now.toLocaleString("en-US", { timeZone: "Asia/Seoul" });
@@ -443,6 +582,7 @@ function getKstYmd(): string {
 // ================================
 // 6) MAIN: POST /api/submit
 // ================================
+
 export async function POST(req: NextRequest) {
   try {
     const { title, body } = await req.json();
@@ -506,20 +646,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 평가 수행 (문수림 미학 기반)
+    // 평가 수행 (문수림 미학 기반 v2.1)
     const evalRes = await evaluate(title, body);
     const ev = evalRes.surimEval;
 
     // insert payload
     const payload: Record<string, any> = {
-      title,
+      title: title || "제목 없음",
       body,
-      score: evalRes.score,       // 기존 점수(총점)
+      score: evalRes.score,       // 총점
       total_score: ev.totalScore, // total_score 컬럼
 
       submit_ymd: submitYmd,      // ✅ 오늘 날짜 (KST 기준)
 
-      // 미학 68점
+      // 미학 45점 (0~5)
       first_sentence: ev.firstSentence,
       freeze: ev.freeze,
       space: ev.space,
@@ -530,7 +670,7 @@ export async function POST(req: NextRequest) {
       rhythm: ev.rhythm,
       micro_particles: ev.microParticles,
 
-      // 서사 22점
+      // 서사 구조 점수
       narrative_compression: ev.narrativeCompression,
       narrative_turn: ev.narrativeTurn,
       narrative_clutter: ev.narrativeClutter,
@@ -546,33 +686,27 @@ export async function POST(req: NextRequest) {
       tags: evalRes.tags,
       reasons: evalRes.reasons,
       byte_count: evalRes.byteCount,
-      
     };
 
-    // 🔽🔽🔽 여기서 OG 이미지 경로 생성 후 payload에 주입 🔽🔽🔽
-   // OG 세부 정보 생성
+    // 🔽🔽🔽 OG 이미지 경로 생성 후 payload에 주입 🔽🔽🔽
     const og = getOgCardDetail({
-    totalScore: ev.totalScore ?? null,
-    aesthetic: {
-      freeze: ev.freeze,
-      space: ev.space,
-      linger: ev.linger,
-      microParticles: ev.microParticles,
-      bleak: ev.bleak,
-      rhythm: ev.rhythm,
-      narrativeTurn: ev.narrativeTurn,
-      aggroToArt: (ev as any).aggroToArt ?? 0,
-    },
-    entryId: null, // 글 생성 시점이라 없음
-  });
+      totalScore: ev.totalScore ?? null,
+      aesthetic: {
+        freeze: ev.freeze,
+        space: ev.space,
+        linger: ev.linger,
+        microParticles: ev.microParticles,
+        bleak: ev.bleak,
+        rhythm: ev.rhythm,
+        narrativeTurn: ev.narrativeTurn,
+        aggroToArt: (ev as any).aggroToArt ?? 0,
+      },
+      entryId: null, // 글 생성 시점이라 없음
+    });
 
-  // payload에 기록
-  payload.og_image = og.path;
-  payload.og_creature = og.creature;
-  payload.og_color = og.color;
-
-  // 제목 처리 (GPT가 title 반환 안 함)
-  payload.title = title || "제목 없음";
+    payload.og_image = og.path;
+    payload.og_creature = og.creature;
+    payload.og_color = og.color;
 
     if (anonId) {
       payload.anon_id = anonId;
@@ -596,9 +730,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-    console.error("insert error", error);
-    return NextResponse.json({ error: "INSERT_FAILED" }, { status: 500 });
-  }
+      console.error("insert error", error);
+      return NextResponse.json({ error: "INSERT_FAILED" }, { status: 500 });
+    }
 
     // 클라이언트에는 기존 형태 유지
     return NextResponse.json({

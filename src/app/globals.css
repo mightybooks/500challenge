@@ -2,6 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 카드 3D 컨테이너 */
+.arcana-card {
+  position: relative;
+  width: 180px;
+  height: 260px;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+
+/* 뒤집힌 상태 */
+.arcana-card.is-flipped {
+  transform: rotateY(180deg);
+}
+
+/* 앞/뒤 면 공통 */
+.arcana-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+/* 앞면(선택 후 보여줄 카드) */
+.arcana-card-front {
+  transform: rotateY(180deg);
+}
+
+/* 뒷면(처음에 보이는 카드) */
+.arcana-card-back {
+  /* 필요하면 약간의 그라디언트나 패턴 넣어도 됨 */
+}
+
+
 /* 최소 기본값. Tailwind 없이도 빌드되게 */
 * {
   box-sizing: border-box;
@@ -11,3 +46,5 @@ body {
   margin: 0;
   padding: 0;
 }
+
+
