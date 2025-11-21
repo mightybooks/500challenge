@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getEntryById } from "@/lib/db";
 import { getScoreBand, type ScoreBand } from "@/lib/og500";
 import { EntryShareBar } from "@/components/EntryShareBar";
+import Link from "next/link";
 
 type PageProps = {
   params: { id: string };
@@ -54,7 +55,7 @@ function MetricBar({ label, value, max = 10 }: MetricBarProps) {
       <span className="w-16 shrink-0 text-slate-500">{label}</span>
       <div className="relative h-1.5 flex-1 rounded-full bg-slate-100">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-slate-900/80"
+          className="absolute inset-y-0 left-0 rounded-full bg-amber-400/80" 
           style={{ width: `${ratio * 100}%` }}
         />
       </div>
@@ -282,13 +283,13 @@ export default async function EntryPage({ params }: PageProps) {
             </p>
 
             <div className="mt-3 grid gap-2 sm:gap-2.5">
-              <MetricBar label="freeze" value={freeze} />
-              <MetricBar label="space" value={space} />
-              <MetricBar label="linger" value={linger} />
-              <MetricBar label="micro" value={microParticles} />
-              <MetricBar label="bleak" value={bleak} />
-              <MetricBar label="rhythm" value={rhythm} />
-              <MetricBar label="turn" value={narrativeTurn} />
+              <MetricBar label="정지" value={freeze} />
+              <MetricBar label="공간화" value={space} />
+              <MetricBar label="여운" value={linger} />
+              <MetricBar label="미립자 감각" value={microParticles} />
+              <MetricBar label="암담도" value={bleak} />
+              <MetricBar label="리듬" value={rhythm} />
+              <MetricBar label="전환" value={narrativeTurn} />
             </div>
           </section>
         )}
@@ -319,15 +320,40 @@ export default async function EntryPage({ params }: PageProps) {
             </ul>
           </section>
         )}
-
+    
         {/* 하단 마무리 텍스트 */}
-        <footer className="mt-4 border-t border-slate-100 pt-3">
-          <p className="text-[11px] text-slate-400">
-            위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
-            <br />
-            작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을 보내주세요.
+        <footer className="mt-6 border-t border-slate-100 pt-4">
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+          위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
+          <br />
+          작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을 보내주세요.
           </p>
-        </footer>
+
+        {/* 버튼 영역 */}
+        <div className="mt-5 flex flex-col sm:flex-row gap-2 sm:justify-end">
+
+          {/* 내 기록 보기 */}
+          <Link
+            href="/my"
+            className="inline-flex items-center justify-center rounded-lg 
+                       bg-[#3a302c] hover:bg-[#2f2723]
+                       px-4 py-2 text-white text-sm font-medium transition"
+          >
+            내 기록 보기
+          </Link>
+
+          {/* 수림스튜디오로 보내기 — 비활성 (stub) */}
+          <button
+            disabled
+            className="inline-flex items-center justify-center rounded-lg 
+                       bg-[#2F5D46] hover:bg-[#264E39]
+                       px-4 py-2 text-white text-sm font-medium transition
+                       opacity-70 cursor-not-allowed"
+          >
+            수림스튜디오로 보내기 (준비중)
+          </button>
+        </div>
+       </footer>
       </article>
     </main>
   );
