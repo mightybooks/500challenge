@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createServerSupabase } from "@/lib/supabaseClient";
 
+const DAILY_LIMIT_ENABLED = process.env.NEXT_PUBLIC_DAILY_LIMIT === "true";
+
 // ================================
 // 타입 정의
 // ================================
@@ -637,33 +639,35 @@ export async function POST(req: NextRequest) {
     const submitYmd = IS_PROD ? getKstYmdLocal() : null;
 
     // ✅ 하루 1회 선 체크 (프로덕션 + anon_id + submit_ymd 있을 때만)
-  if (IS_PROD && anonId && submitYmd) {
-    const { data: existing, error: checkError } = await supabaseAdmin
-      .from("entries")
-      .select("id")
-      .eq("anon_id", anonId)
-      .eq("submit_ymd", submitYmd)
-      .limit(1)
-      .maybeSingle();
+    if (IS_PROD && DAILY_LIMIT_ENABLED && anonId && submitYmd) {
+      const { data: existing, error: checkError } = await supabaseAdmin
+        .from("entries")
+        .select("id")
+        .eq("anon_id", anonId)
+        .eq("submit_ymd", submitYmd)
+        .limit(1)
+        .maybeSingle();
 
-    if (checkError) {
-      console.error("daily-check error", checkError);
-      return NextResponse.json(
-        {
-          error:
-            "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-        },
-        { status: 500 },
-      );
+      if (checkError) {
+        console.error("daily-check error", checkError);
+        return NextResponse.json(
+          {
+            error:
+              "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+          },
+          { status: 500 },
+        );
+      }
+
+      if (existing) {
+        return NextResponse.json(
+          { error: "오늘은 이미 제출하셨습니다." },
+          { status: 429 },
+        );
+      }
     }
 
-    if (existing) {
-      return NextResponse.json(
-        { error: "오늘은 이미 제출하셨습니다." },
-        { status: 429 },
-      );
-    }
-  }
+    console.log("DAILY_LIMIT_ENABLED:", DAILY_LIMIT_ENABLED);
 
     // 평가 수행 (문수림 미학 기반 v2.1)
     const evalRes = await evaluate(title, body);
