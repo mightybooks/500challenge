@@ -636,7 +636,9 @@ export async function POST(req: NextRequest) {
     const anonId = anonCookie?.value ?? null;
 
     // ✅ 오늘 날짜(KST 기준) – 프로덕션에서만 사용
-    const submitYmd = IS_PROD ? getKstYmdLocal() : null;
+    const submitYmd =
+  IS_PROD && DAILY_LIMIT_ENABLED ? getKstYmdLocal() : null;
+
 
     // ✅ 하루 1회 선 체크 (프로덕션 + anon_id + submit_ymd 있을 때만)
     if (IS_PROD && DAILY_LIMIT_ENABLED && anonId && submitYmd) {
