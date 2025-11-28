@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createServerSupabase } from "@/lib/supabaseClient";
-import { getOgCardDetail } from "@/lib/og500";
 
 // ================================
 // 타입 정의
@@ -51,6 +50,16 @@ function toScore(raw: any, min: number, max: number): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, Math.round(n)));
+}
+
+function getKstYmdDevSafe() {
+  const base = getKstYmd();
+
+  if (process.env.NODE_ENV !== "production") {
+    return `${base}-${Date.now()}`; 
+  }
+
+  return base;
 }
 
 // ================================
@@ -610,41 +619,51 @@ export async function POST(req: NextRequest) {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user ?? null;
 
-    // anon_id 쿠키
+    const IS_PROD = process.env.NODE_ENV === "production";
+
+    // 한국 시간(Asia/Seoul) 기준 "YYYY-MM-DD" 문자열 반환 (로컬 전용 복붙 버전)
+  function getKstYmdLocal(): string {
+    const now = new Date();
+    const kstString = now.toLocaleString("en-US", { timeZone: "Asia/Seoul" });
+    const kst = new Date(kstString);
+    return kst.toISOString().slice(0, 10); // "2025-11-21"
+  }
+
+   // anon_id 쿠키
     const anonCookie = cookies().get("anon_id");
     const anonId = anonCookie?.value ?? null;
 
-    // ✅ 오늘 날짜(KST 기준)
-    const submitYmd = getKstYmd();
+    // ✅ 오늘 날짜(KST 기준) – 프로덕션에서만 사용
+    const submitYmd = IS_PROD ? getKstYmdLocal() : null;
 
-    // ✅ 하루 1회 선 체크 (anon_id가 있는 경우에만)
-    if (anonId) {
-      const { data: existing, error: checkError } = await supabaseAdmin
-        .from("entries")
-        .select("id")
-        .eq("anon_id", anonId)
-        .eq("submit_ymd", submitYmd)
-        .limit(1)
-        .maybeSingle();
+    // ✅ 하루 1회 선 체크 (프로덕션 + anon_id + submit_ymd 있을 때만)
+  if (IS_PROD && anonId && submitYmd) {
+    const { data: existing, error: checkError } = await supabaseAdmin
+      .from("entries")
+      .select("id")
+      .eq("anon_id", anonId)
+      .eq("submit_ymd", submitYmd)
+      .limit(1)
+      .maybeSingle();
 
-      if (checkError) {
-        console.error("daily-check error", checkError);
-        return NextResponse.json(
-          {
-            error:
-              "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
-          },
-          { status: 500 },
-        );
-      }
-
-      if (existing) {
-        return NextResponse.json(
-          { error: "오늘은 이미 제출하셨습니다." },
-          { status: 429 },
-        );
-      }
+    if (checkError) {
+      console.error("daily-check error", checkError);
+      return NextResponse.json(
+        {
+          error:
+            "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+        },
+        { status: 500 },
+      );
     }
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "오늘은 이미 제출하셨습니다." },
+        { status: 429 },
+      );
+    }
+  }
 
     // 평가 수행 (문수림 미학 기반 v2.1)
     const evalRes = await evaluate(title, body);
@@ -657,7 +676,7 @@ export async function POST(req: NextRequest) {
       score: evalRes.score,       // 총점
       total_score: ev.totalScore, // total_score 컬럼
 
-      submit_ymd: submitYmd,      // ✅ 오늘 날짜 (KST 기준)
+      
 
       // 미학 45점 (0~5)
       first_sentence: ev.firstSentence,
@@ -686,27 +705,16 @@ export async function POST(req: NextRequest) {
       tags: evalRes.tags,
       reasons: evalRes.reasons,
       byte_count: evalRes.byteCount,
+
+      // 🔮 아르카나/OG 관련 컬럼은 이후 별도 API에서 update 예정
+      // arcana_id: null,
+      // arcana_code: null,
+      // og_image: null,
     };
 
-    // 🔽🔽🔽 OG 이미지 경로 생성 후 payload에 주입 🔽🔽🔽
-    const og = getOgCardDetail({
-      totalScore: ev.totalScore ?? null,
-      aesthetic: {
-        freeze: ev.freeze,
-        space: ev.space,
-        linger: ev.linger,
-        microParticles: ev.microParticles,
-        bleak: ev.bleak,
-        rhythm: ev.rhythm,
-        narrativeTurn: ev.narrativeTurn,
-        aggroToArt: (ev as any).aggroToArt ?? 0,
-      },
-      entryId: null, // 글 생성 시점이라 없음
-    });
-
-    payload.og_image = og.path;
-    payload.og_creature = og.creature;
-    payload.og_color = og.color;
+    if (IS_PROD && submitYmd) {
+      payload.submit_ymd = submitYmd;
+    }
 
     if (anonId) {
       payload.anon_id = anonId;
@@ -722,16 +730,11 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (error) {
-      if ((error as any).code === "23505") {
-        // 하루 1회 제한 위반 (anon_id + 날짜 중복)
-        return NextResponse.json(
-          { error: "오늘은 이미 제출하셨습니다." },
-          { status: 429 },
-        );
-      }
-
       console.error("insert error", error);
-      return NextResponse.json({ error: "INSERT_FAILED" }, { status: 500 });
+      return NextResponse.json(
+        { error: "INSERT_FAILED" },
+        { status: 500 },
+      );
     }
 
     // 클라이언트에는 기존 형태 유지

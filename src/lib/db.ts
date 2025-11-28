@@ -12,8 +12,11 @@ export type EntryRow = {
 
   // OG / 공유 카드
   og_image: string | null;
-  og_creature: string | null;
-  og_color: string | null;
+
+  // 아르카나 정보
+  arcana_id: number | null;
+  arcana_code: string | null;
+  arcana_label: string | null;
 
   // 미학 68점
   freeze: number | null;
@@ -44,38 +47,35 @@ export type EntryRow = {
 };
 
 export async function getEntryById(id: string): Promise<EntryRow | null> {
+  console.log("DB DEBUG getEntryById input:", id);
+
   const { data, error } = await supabaseAdmin
     .from("entries")
     .select(`
       id,
       title,
       body,
-
       score,
       total_score,
-
       og_image,
-      og_creature,
-      og_color,
-
+      arcana_id,
+      arcana_code,
+      arcana_label,
       freeze,
       space,
       linger,
       micro_particles,
       bleak,
       rhythm,
-
       narrative_turn,
       narrative_compression,
       narrative_clutter,
       narrative_rhythm,
       narrative_score,
-
       layer_score,
       world_score,
       theme_score,
       creativity_score,
-
       tags,
       reasons,
       created_at,
@@ -84,10 +84,38 @@ export async function getEntryById(id: string): Promise<EntryRow | null> {
     .eq("id", id)
     .single();
 
+  console.log("DB DEBUG getEntryById raw:", {
+    id,
+    data,
+    error,
+    arcana_id: data?.arcana_id ?? null,
+    arcana_type: data ? typeof data.arcana_id : "no-data",
+  });
+
   if (error) {
     console.error("getEntryById error:", error);
     return null;
   }
 
-  return data as EntryRow;
+  if (!data) {
+    console.warn("getEntryById: no data for id", id);
+    return null;
+  }
+
+  // arcana_id를 한 번 더 숫자로 정규화 (문자열로 들어오는 경우 방지)
+  const normalized: EntryRow = {
+    ...(data as any),
+    arcana_id:
+      data.arcana_id === null || data.arcana_id === undefined
+        ? null
+        : Number(data.arcana_id),
+  };
+
+  console.log("DB DEBUG getEntryById normalized:", {
+    id,
+    arcana_id: normalized.arcana_id,
+    arcana_type: typeof normalized.arcana_id,
+  });
+
+  return normalized;
 }

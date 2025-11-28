@@ -4,18 +4,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getScoreBand, type ScoreBand } from "@/lib/og500";
+import {
+  ARCANA_BACK_IMAGE,
+  getArcanaImagePath,
+  type ArcanaId,
+} from "@/lib/arcana/og";
+
 
 type MyRecord = {
   id: string;
   title: string;
   score: number | null;
   tags: string[] | null;
-  reasons?: string[] | null;
   byte_count?: number | null;
   created_at: string;
-  share_status?: string[] | null;
   og_image?: string | null;
   score_band?: ScoreBand | null;
+  arcana_id?: number | null;
+  arcana_code?: string | null;
 };
 
 function formatDate(iso: string): string {
@@ -45,9 +51,7 @@ function getScoreBadge(score: number | null, band?: ScoreBand | null) {
     return {
       label,
       bandLabel: "실험 중",
-      className:
-        base +
-        "bg-slate-200 text-slate-700",
+      className: base + "bg-slate-200 text-slate-700",
     };
   }
 
@@ -77,30 +81,6 @@ function getScoreBadge(score: number | null, band?: ScoreBand | null) {
     bandLabel,
     className: base + colorClass,
   };
-}
-
-// og_image 경로에서 동물 타입 추출
-function parseAnimalFromOgImage(
-  og: string | null | undefined,
-): { key: string | null; label: string | null } {
-  if (!og) return { key: null, label: null };
-
-  // 예: /og/500/unicorn-amber.png
-  const file = og.split("/").pop() ?? "";
-  const [animal] = file.split("-"); // unicorn-amber → unicorn
-
-  switch (animal) {
-    case "unicorn":
-      return { key: "unicorn", label: "유니콘형" };
-    case "griffin":
-      return { key: "griffin", label: "그리핀형" };
-    case "wolf":
-      return { key: "wolf", label: "울프형" };
-    case "basilisk":
-      return { key: "basilisk", label: "바실리스크형" };
-    default:
-      return { key: null, label: null };
-  }
 }
 
 export default function MyPage() {
@@ -232,7 +212,7 @@ export default function MyPage() {
       {!loading && !error && hasRecords && (
         <>
           <section className="mt-4 space-y-3">
-            {visibleRecords.map((record) => {
+            {visibleRecords.map(record => {
               const tags = Array.isArray(record.tags)
                 ? record.tags
                 : [];
@@ -245,69 +225,71 @@ export default function MyPage() {
                 record.score,
                 band ?? undefined,
               );
-              const animalInfo = parseAnimalFromOgImage(
-                record.og_image,
-              );
+              const createdLabel = formatDate(record.created_at);
 
+              const thumb =
+              record.arcana_id !== null &&
+              record.arcana_id !== undefined
+                ? getArcanaImagePath(record.arcana_id as ArcanaId)
+                : record.og_image && record.og_image.trim() !== ""
+                  ? record.og_image
+                  : ARCANA_BACK_IMAGE;
+                  
               return (
                 <Link
                   key={record.id}
                   href={`/entries/${record.id}`}
-                  className="block rounded-2xl border border-slate-100 bg-white px-4 py-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                  className="block rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <h2 className="text-sm font-semibold leading-snug text-slate-900 line-clamp-1 sm:text-[15px]">
-                      {record.title || "(제목 없음)"}
-                    </h2>
-
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] sm:text-xs text-slate-500">
-                      <span className={scoreInfo.className}>
-                        {scoreInfo.label}
-                        {scoreInfo.bandLabel &&
-                          ` · ${scoreInfo.bandLabel}`}
-                      </span>
-
-                      {animalInfo.label && (
-                        <>
-                          <span className="hidden h-3 w-px bg-slate-200 sm:inline-block" />
-                          <span className="rounded-full border border-slate-100 bg-slate-50 px-2 py-0.5 text-[10px] sm:text-[11px] text-slate-600">
-                            {animalInfo.label}
-                          </span>
-                        </>
-                      )}
-
-                      <span className="hidden h-3 w-px bg-slate-200 sm:inline-block" />
-
-                      <span className="text-slate-400">
-                        작성일 {formatDate(record.created_at)}
-                      </span>
+                  <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
+                    {/* 썸네일: 항상 하나는 보이도록 (없으면 ARCANA_BACK_IMAGE) */}
+                    <div className="w-24 shrink-0 sm:w-28">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={thumb}
+                        alt="정서 앵커 카드"
+                        className="h-full w-full rounded-xl border border-slate-100 object-cover"
+                      />
                     </div>
-                  </div>
 
-                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 sm:text-[12px]">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {record.byte_count !== null &&
-                        typeof record.byte_count ===
-                          "number" && (
-                          <span>
-                            바이트 {record.byte_count}/1250
-                          </span>
-                        )}
-                    </div>
-                  </div>
+                    {/* 우측 정보 영역 */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
+                        <h2 className="max-w-[70%] text-sm font-semibold leading-snug text-slate-900 line-clamp-1 sm:text-[15px]">
+                          {record.title || "(제목 없음)"}
+                        </h2>
 
-                  {tags.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-0.5 text-[11px] text-slate-700"
-                        >
-                          #{tag}
+                        <span className={scoreInfo.className}>
+                          {scoreInfo.label}
+                          {scoreInfo.bandLabel &&
+                            ` · ${scoreInfo.bandLabel}`}
                         </span>
-                      ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 sm:text-xs">
+                        <span>작성일 {createdLabel}</span>
+                        {typeof record.byte_count === "number" && (
+                          <>
+                            <span className="h-3 w-px bg-slate-200" />
+                            <span>바이트 {record.byte_count}/1250</span>
+                          </>
+                        )}
+                      </div>
+
+                      {tags.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-0.5 text-[11px] text-slate-700"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </Link>
               );
             })}
@@ -317,7 +299,7 @@ export default function MyPage() {
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
-                onClick={() => setPage((p) => p + 1)}
+                onClick={() => setPage(p => p + 1)}
                 className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
               >
                 이전 기록 더 보기

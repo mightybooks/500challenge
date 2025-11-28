@@ -23,14 +23,14 @@ export default function Home() {
 
         {/* 타이틀 */}
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          500자 소설 도전
+          500자 소설 챌린지
         </h1>
 
         {/* 서브텍스트 */}
         <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
           이 웹앱은 문수림이 설계한 <strong>‘500자 소설 챌린지’</strong>입니다.
           <br />
-          단 한 번의 기회, <span className="font-semibold">하루 1회</span>만 도전하실 수 있습니다.
+          하루 단 한 번의 기회, <span className="font-semibold">하루 1회</span>만 도전하실 수 있습니다.
           <br />
           500자 안에 여러분만의 서사를 얼마나 밀도 있게 담을 수 있을지 시험해 보세요.
         </p>

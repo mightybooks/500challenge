@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+console.log("SUPABASE ENV DEBUG", { url, anon: anon.slice(0, 8) + "..." });
+
 // 브라우저용: 컴포넌트(use client) 등에서 사용
 export function createClient() {
   return createBrowserClient(url, anon);

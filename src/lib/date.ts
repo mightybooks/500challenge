@@ -5,5 +5,5 @@ export function getKstYmd(): string {
   const now = new Date();
   const kstString = now.toLocaleString("en-US", { timeZone: "Asia/Seoul" });
   const kst = new Date(kstString);
-  return kst.toISOString().slice(0, 10); // "2025-11-21" 같은 형식
+  return kst.toISOString().slice(0, 10); // "2025-11-21"
 }
