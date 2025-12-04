@@ -1,4 +1,5 @@
 // File: src/components/ResultCard.tsx
+import { getDisplayScore } from "@/lib/score";
 
 type ResultCardProps = {
   title: string;
@@ -38,8 +39,11 @@ export function ResultCard({
   tags,
   reasons,
 }: ResultCardProps) {
+  const displayScore =
+    typeof score === "number" ? getDisplayScore(score) : null;
+
   const scoreText =
-    typeof score === "number" ? `${score}점` : "점수 없음";
+    typeof displayScore === "number" ? `${displayScore}점` : "점수 없음";
 
   const safeTags = Array.isArray(tags) ? tags : [];
   const safeReasons = Array.isArray(reasons) ? reasons : [];
@@ -58,7 +62,7 @@ export function ResultCard({
 
       {/* 점수 + 메타 */}
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-slate-500">
-        <span className={getScoreBadgeClass(score)}>
+        <span className={getScoreBadgeClass(displayScore)}>
           {scoreText}
         </span>
 

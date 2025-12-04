@@ -1,22 +1,35 @@
 // File: src/components/arcana/ArcanaChoicePage.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, } from "next/navigation";
 import {
   ARCANA_META,
-  ARCANA_BACK_IMAGE,
+  ARCANA_BACK_IMAGE_NOVEL,
+  ARCANA_BACK_IMAGE_ESSAY,
   type ArcanaId,
 } from "@/lib/arcana/og";
 import { ArcanaDeckVisual } from "@/components/arcana/ArcanaDeckVisual";
+import { pickArcanaCandidates } from "@/lib/arcana/pick";
+import { detectArcanaFromFirstSentence } from "@/lib/arcana/text";
+import type { WritingMode } from "@/lib/arcana/types";
 
 type Props = {
   entryId: string;
   title: string;
+  tags: string[];
+  firstSentence: string; // 🔹 추가  
+  mode: WritingMode; // 🔹 고정 모드 주입
 };
 
-export function ArcanaChoicePage({ entryId, title }: Props) {
+export function ArcanaChoicePage({ entryId, title, tags: rawTags, firstSentence, mode, }: Props) {
   const router = useRouter();
+  // 혹시 몰라서 안전장치 하나
+  const effectiveMode: WritingMode = mode ?? "novel";
+
+  const backImageSrc =
+    effectiveMode === "essay" ? ARCANA_BACK_IMAGE_ESSAY : ARCANA_BACK_IMAGE_NOVEL;
+
   const [loadingId, setLoadingId] = useState<ArcanaId | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedId, setSelectedId] = useState<ArcanaId | null>(null);
@@ -25,78 +38,98 @@ export function ArcanaChoicePage({ entryId, title }: Props) {
   const [requestDone, setRequestDone] = useState(false);
   const [animationDone, setAnimationDone] = useState(false);
 
-  // TODO: 이후 점수/키워드 기반 추천 로직으로 교체 예정
-  const candidates = ARCANA_META.slice(0, 3);
+  const tags = rawTags ?? [];
+
+   // ◆ 첫 문장 + 모드 기반 앵커 카드 추정
+  const anchorId = useMemo(
+    () => detectArcanaFromFirstSentence(firstSentence, effectiveMode),
+    [firstSentence, effectiveMode]
+  );
+
+  // ◆ 태그 기반 랜덤 후보 3장
+  const candidates = useMemo(
+    () =>
+      pickArcanaCandidates({
+        entryTags: tags,
+        anchorId,
+      }),
+    [tags, anchorId]
+  );
+
+    useEffect(() => {
+    console.log("[ArcanaChoicePage] ==========");
+    console.log("[ArcanaChoicePage] firstSentence:", firstSentence);
+    console.log("[ArcanaChoicePage] mode:", effectiveMode);
+    console.log("[ArcanaChoicePage] anchorId from firstSentence:", anchorId);
+    console.log("[ArcanaChoicePage] tags:", tags);
+    console.log(
+      "[ArcanaChoicePage] candidateIds:",
+      candidates.map((c) => c.id)
+    );
+  }, [firstSentence, effectiveMode, anchorId, tags, candidates]);
 
   async function handleSelect(cardId: ArcanaId) {
-  if (submitting) return;
+    if (submitting) return;
 
-  const card = ARCANA_META.find(c => c.id === cardId);
-  if (!card) return;
+    const card = ARCANA_META.find((c) => c.id === cardId);
+    if (!card) return;
 
-  // 상태 초기화
-  setSelectedId(cardId);
-  setLoadingId(cardId);
-  setSubmitting(true);
-  setShowFlash(false);
-  setRequestDone(false);
-  setAnimationDone(false);
-
-  // 1) 애니메이션 타임라인: 클릭 기준
-  // 0ms ~ 1200ms: CSS 스핀 (arcana-card-spin)
-  // 800ms: 플래시 ON
-  // 1200ms: 애니메이션 종료로 간주
-  setTimeout(() => {
-    setShowFlash(true);
-
-    // 플래시 길이(0.4s) 끝나면 애니메이션 전체 완료로 처리
-    setTimeout(() => {
-      setAnimationDone(true);
-    }, 400);
-  }, 800);
-
-  // 2) 서버 요청 병렬 실행
-  try {
-    const resp = await fetch("/api/entry-arcana", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        entryId,
-        arcanaId: card.id,
-        arcanaCode: card.code,
-        arcanaKoName: card.krTitle,
-      }),
-    });
-
-    const data = await resp.json();
-
-    if (!resp.ok || data?.error) {
-      throw new Error(data?.error || "카드 선택에 실패했습니다.");
-    }
-
-    // 서버 저장 완료
-    setRequestDone(true);
-  } catch (err) {
-    console.error(err);
-    alert("카드 선택 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
-
-    // 실패 시 상태 롤백
-    setSubmitting(false);
-    setLoadingId(null);
-    setSelectedId(null);
+    // 상태 초기화
+    setSelectedId(cardId);
+    setLoadingId(cardId);
+    setSubmitting(true);
     setShowFlash(false);
     setRequestDone(false);
     setAnimationDone(false);
-  }
-}
 
-    // 애니메이션과 서버 저장이 모두 끝났을 때만 페이지 이동
-    useEffect(() => {
+    // 1) 애니메이션 타임라인
+    setTimeout(() => {
+      setShowFlash(true);
+
+      setTimeout(() => {
+        setAnimationDone(true);
+      }, 400);
+    }, 800);
+
+    // 2) 서버 요청
+    try {
+      const resp = await fetch("/api/entry-arcana", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entryId,
+          arcanaId: card.id,
+          arcanaCode: card.code,
+          arcanaKoName: card.krTitle,
+        }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok || data?.error) {
+        throw new Error(data?.error || "카드 선택에 실패했습니다.");
+      }
+
+      setRequestDone(true);
+    } catch (err) {
+      console.error(err);
+      alert("카드 선택 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+
+      setSubmitting(false);
+      setLoadingId(null);
+      setSelectedId(null);
+      setShowFlash(false);
+      setRequestDone(false);
+      setAnimationDone(false);
+    }
+  }
+
+  // 애니메이션과 서버 저장이 모두 끝났을 때만 페이지 이동
+  useEffect(() => {
     if (!requestDone || !animationDone) return;
 
-    // 둘 다 true가 된 시점에 이동
-    router.push(`/entries/${entryId}`);
-    }, [requestDone, animationDone, router, entryId]);
+    router.replace(`/entries/${entryId}`);
+  }, [requestDone, animationDone, router, entryId]);
 
   return (
     <div className="relative">
@@ -135,65 +168,65 @@ export function ArcanaChoicePage({ entryId, title }: Props) {
         <section className="space-y-6 rounded-2xl bg-slate-900/90 px-4 py-8 text-slate-100 shadow-sm">
           {/* 덱 비주얼 */}
           <div className="mb-2 flex flex-col items-center justify-center gap-2">
-            <ArcanaDeckVisual backImageSrc={ARCANA_BACK_IMAGE} />
+            <ArcanaDeckVisual backImageSrc={backImageSrc} />
             <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-300">
-              아래의 3장 중에서 1장을 선택해주세요<br/> 
+              아래의 3장 중에서 1장을 선택해주세요
+              <br />
               너무 고민하지 말고, 첫 느낌으로 골라 주세요.
             </p>
           </div>
 
           {/* 후보 3장 뒷면 카드 */}
           <div className="grid gap-3 sm:grid-cols-3">
-            {candidates.map(card => {
-                const isSelected = selectedId === card.id;
-                const isLoading = loadingId === card.id;
+            {candidates.map((card) => {
+              const isSelected = selectedId === card.id;
+              const isLoading = loadingId === card.id;
 
-                const dimOthers = submitting && !isSelected;
+              const dimOthers = submitting && !isSelected;
 
-                return (
+              return (
                 <button
-                    key={card.id}
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => handleSelect(card.id as ArcanaId)}
-                    className={`
+                  key={card.id}
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => handleSelect(card.id as ArcanaId)}
+                  className={`
                     group flex flex-col items-center rounded-2xl border 
                     border-slate-700 bg-slate-900/80 p-3 transition
                     hover:-translate-y-1 hover:border-slate-400 hover:shadow-md
                     disabled:cursor-not-allowed
                     ${dimOthers ? "opacity-40" : ""}
                     ${isSelected ? "brightness-110" : ""}
-                    `}
-                    aria-label={`${card.krTitle} 카드 선택`}
+                  `}
+                  aria-label={`${card.krTitle} 카드 선택`}
                 >
-                    <div className="relative w-full max-w-[120px]">
-                    {/* 뒷면 카드 */}
+                  <div className="relative w-full max-w-[120px]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        src={ARCANA_BACK_IMAGE}
-                        alt={card.krTitle}
-                        className={`
+                      src={backImageSrc}
+                      alt={card.krTitle}
+                      className={`
                         w-full rounded-xl
                         ${
-                            isSelected
+                          isSelected
                             ? "arcana-card-spin"
                             : "transition-transform group-hover:scale-105"
                         }
-                        `}
+                      `}
                     />
 
                     {isLoading && (
-                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/10">
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/10">
                         <span className="text-[10px] text-slate-100 drop-shadow">
-                            {/* 시각적으로는 거의 안 보여도 됨 */}
+                          {/* 로딩 오버레이 */}
                         </span>
-                        </div>
+                      </div>
                     )}
-                    </div>
+                  </div>
                 </button>
-                );
+              );
             })}
-            </div>
+          </div>
 
           {submitting && (
             <p className="mt-3 text-center text-[11px] text-slate-400">

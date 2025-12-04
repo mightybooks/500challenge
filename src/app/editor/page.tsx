@@ -7,15 +7,28 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"; // 🔹 여기
 import Modal from "@/components/Modal";
 import { ensureAnonId } from "@/lib/anon";
 import { BYTE_LIMIT } from "@/lib/config";
+import { ARCANA_SEEDS_NOVEL, ARCANA_SEEDS_ESSAY } from "@/lib/arcana/seeds";
+import type { WritingMode } from "@/lib/arcana/types";
 
 const MAX_BYTES = BYTE_LIMIT;
 const WARN_BYTES = 50;
 
 type Phase = "idle" | "confirm" | "loading" | "error";
+
+function getRandomSeedSentence(mode: WritingMode): string {
+  const pool = mode === "essay" ? ARCANA_SEEDS_ESSAY : ARCANA_SEEDS_NOVEL;
+
+  const arcanaIndex = Math.floor(Math.random() * pool.length);
+  const seeds = pool[arcanaIndex] ?? [];
+  if (seeds.length === 0) return "";
+
+  const seedIndex = Math.floor(Math.random() * seeds.length);
+  return seeds[seedIndex] ?? "";
+}
 
 function utf8ByteLength(text: string): number {
   return new TextEncoder().encode(text).length;
@@ -50,6 +63,7 @@ type SubmitResponse = {
 export default function EditorPage() {
   const router = useRouter();
 
+  const [mode, setMode] = useState<WritingMode>("novel");  // 기본값: 소설
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [touched, setTouched] = useState(false);
@@ -71,6 +85,29 @@ export default function EditorPage() {
   const canSubmit = isTitleValid && isBodyValid && !loading;
 
   const [lastEntryId, setLastEntryId] = useState<string | null>(null);
+
+  // 최초 진입 시 첫 문장 자동 세팅
+  useEffect(() => {
+    // 클라이언트에서만 동작
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const m = params.get("mode");
+    setMode(m === "essay" ? "essay" : "novel");
+  }, []);
+
+  const [seedInitialized, setSeedInitialized] = useState(false);
+
+  useEffect(() => {
+    if (seedInitialized) return;
+    if (body.trim().length > 0) return;
+
+    const seed = getRandomSeedSentence(mode);
+    if (!seed) return;
+
+    setBody(seed + " ");
+    setSeedInitialized(true);
+  }, [mode, seedInitialized, body]);
 
   // textarea 높이 자동 조정
   useEffect(() => {
@@ -122,7 +159,7 @@ async function handleConfirmSubmit() {
     const resp = await fetch("/api/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify({ title, body, mode }),
     });
 
     const data = await resp.json();
@@ -139,7 +176,7 @@ async function handleConfirmSubmit() {
     setPhase("idle");
     setLastEntryId(entryId);
 
-    router.push(`/entries/${entryId}/arcana`);
+    router.replace(`/entries/${entryId}/arcana?mode=${mode}`);
   } catch (err: unknown) {
     const msg =
       err instanceof Error ? err.message : "서버 오류가 발생했습니다.";
@@ -159,14 +196,18 @@ async function handleConfirmSubmit() {
     setBody((prev) => trimToBytes(prev, MAX_BYTES));
   }
 
+  const titleLabel = mode === "essay" ? "500자 에세이 작성" : "500자 소설 작성";
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-2xl font-bold tracking-tight">
-        500자 소설 작성
+        {titleLabel}
       </h1>
       <p className="mt-1 text-sm text-neutral-500">
         제목은 글자수 제한과 무관합니다. 본문만{" "}
-        <strong>{MAX_BYTES}바이트</strong> 이내로 작성해 주세요.
+        <strong>{MAX_BYTES}바이트</strong> 이내로 작성해 주세요.<br/>
+        익숙하지 않은 사용자들을 위해 수림봇이 적절한 첫 문장을 지급해 드립니다.<br/>
+        그렇다고 그 문장을 꼭 활용하실 필요도 없습니다. ^^
       </p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-6">

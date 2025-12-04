@@ -6,6 +6,8 @@ export type EntryRow = {
   title: string | null;
   body: string | null;
 
+  mode: "novel" | "essay" | null; // ← 이거 추가
+
   // 점수
   score: number | null;          // 예전 점수
   total_score: number | null;    // 문수림 100점 체계
@@ -79,7 +81,8 @@ export async function getEntryById(id: string): Promise<EntryRow | null> {
       tags,
       reasons,
       created_at,
-      byte_count
+      byte_count,
+      mode
     `)
     .eq("id", id)
     .single();

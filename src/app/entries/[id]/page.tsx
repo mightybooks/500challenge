@@ -7,13 +7,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntryById } from "@/lib/db";
 import {
+  getArcanaFallbackOg,
   ARCANA_META,
-  ARCANA_BACK_IMAGE,
+  ARCANA_BACK_IMAGE_NOVEL,
+  ARCANA_BACK_IMAGE_ESSAY,
+  ARCANA_LOSER_IMAGE,
   getArcanaImagePath,
   type ArcanaId,
 } from "@/lib/arcana/og";
 import { EntryShareBar } from "@/components/EntryShareBar";
 import { ArcanaSection } from "@/components/arcana/ArcanaSection";
+import type { WritingMode } from "@/lib/arcana/types";
+import { getDisplayScore, isLoserScore } from "@/lib/score";
+import { LOSER_THRESHOLD } from "@/lib/score"; // 필요하다면
 
 type PageProps = {
   params: { id: string };
@@ -39,7 +45,7 @@ export async function generateMetadata(
         description: "내가 쓴 500자 소설을 기록하고 평가하는 서비스",
         images: [
           {
-            url: ARCANA_BACK_IMAGE,
+            url: ARCANA_BACK_IMAGE_NOVEL,
             width: 1200,
             height: 630,
           },
@@ -49,6 +55,10 @@ export async function generateMetadata(
   }
 
   const t = entry.title || "500자 소설";
+
+   // 🔹 점수 필드: 실제 DB 컬럼명에 맞춰 조정
+  const score: number | null =
+    (entry as any).score ?? (entry as any).eval_score ?? null;
 
   const rawArcanaId = entry.arcana_id;
   const rawArcanaCode = entry.arcana_code;
@@ -74,10 +84,21 @@ export async function generateMetadata(
       ? ARCANA_META.find(c => c.id === arcanaId) ?? null
       : null);
 
-  const ogImage =
-    arcanaMeta
+  // 🔹 mode 꺼내고
+  const mode = (entry as any).mode as WritingMode | null | undefined;
+
+  // 🔹 직접 분기 대신 헬퍼 사용
+  const defaultOgImage = getArcanaFallbackOg(mode);
+
+  const LOW_SCORE_THRESHOLD = 50; // 🔹 기준 점수, 원하시면 나중에 조정
+
+  const ogImageUrl =
+    // 🔹 점수 미달이면 무조건 루저 카드
+    score !== null && score < LOW_SCORE_THRESHOLD
+      ? ARCANA_LOSER_IMAGE
+      : arcanaMeta
       ? getArcanaImagePath(arcanaMeta.id)
-      : entry.og_image ?? ARCANA_BACK_IMAGE;
+      : entry.og_image ?? defaultOgImage;
 
   return {
     title: `500자 소설 – ${t}`,
@@ -87,7 +108,7 @@ export async function generateMetadata(
       description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
       images: [
         {
-          url: ogImage,
+          url: ogImageUrl,
           width: 1200,
           height: 630,
         },
@@ -97,7 +118,7 @@ export async function generateMetadata(
       card: "summary_large_image",
       title: t,
       description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
-      images: [ogImage],
+      images: [ogImageUrl],
     },
   };
 }
@@ -122,10 +143,15 @@ export default async function EntryPage({ params }: PageProps) {
   // ---------- 기본 데이터 ----------
   const title: string = entry.title ?? "500자 소설";
 
-  const totalScore: number | null =
+   const rawScore: number | null =
     (entry.total_score as number | null) ??
     (entry.score as number | null) ??
     null;
+
+  const displayScore: number | null =
+    typeof rawScore === "number" ? getDisplayScore(rawScore) : null;
+
+  const isLoser = isLoserScore(rawScore);
 
   const tags: string[] = Array.isArray(entry.tags) ? entry.tags : [];
   const reasons: string[] = Array.isArray(entry.reasons) ? entry.reasons : [];
@@ -147,6 +173,7 @@ export default async function EntryPage({ params }: PageProps) {
  // ---------- 아르카나 / OG 이미지 ----------
 
   // 1) 코드/아이디 둘 다 가져오되, 코드 우선
+  const mode = (entry as any).mode as WritingMode | null | undefined;
   const rawArcanaId = (entry as any).arcana_id;
   const rawArcanaCode = (entry as any).arcana_code as string | null;
 
@@ -166,11 +193,20 @@ export default async function EntryPage({ params }: PageProps) {
       : null);
 
   // 최종 OG 이미지
-  const ogImageUrl: string =
-    arcanaMeta
-      ? getArcanaImagePath(arcanaMeta.id)
-      : entry.og_image ?? ARCANA_BACK_IMAGE;
+  const defaultOgImage = getArcanaFallbackOg(mode);
 
+  const LOW_SCORE_THRESHOLD = 50;
+
+  // OG 판정에 사용할 점수: 우선 displayScore, 없으면 rawScore
+    const scoreForOg: number | null =
+    typeof displayScore === "number" ? displayScore : rawScore;
+
+  const ogImageUrl =
+    scoreForOg !== null && isLoser
+      ? ARCANA_LOSER_IMAGE
+      : arcanaMeta
+      ? getArcanaImagePath(arcanaMeta.id)
+      : entry.og_image ?? defaultOgImage;
 
   // ---------- 미학 점수들 ----------
   const ae = entry as {
@@ -246,9 +282,9 @@ export default async function EntryPage({ params }: PageProps) {
           </h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600 sm:text-xs">
-            {typeof totalScore === "number" && (
+            {typeof displayScore === "number" && (
               <span className="inline-flex items-center rounded-full bg-slate-900 px-2.5 py-0.5 text-[11px] font-semibold text-white sm:text-xs">
-                총점 {totalScore}점
+                총점 {displayScore}점
               </span>
             )}
 
@@ -276,9 +312,9 @@ export default async function EntryPage({ params }: PageProps) {
         </header>
 
         {/* 1) 정서 앵커 카드 표시 섹션 */}
-        {arcanaMeta && (
-          <ArcanaSection arcanaMeta={arcanaMeta} />
-        )}
+      {arcanaMeta && (
+        <ArcanaSection arcanaMeta={arcanaMeta} isLoser={isLoser} />
+      )}
 
         {/* 2) 결과 이미지 & 공유 섹션 */}
         <section className="mb-7 rounded-3xl border border-slate-100 bg-slate-50 px-4 py-5 sm:px-6 sm:py-6">

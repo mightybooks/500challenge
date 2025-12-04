@@ -596,7 +596,7 @@ function getKstYmd(): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, body } = await req.json();
+    const { title, body, mode } = await req.json();
 
     if (typeof title !== "string" || typeof body !== "string" || !body.trim()) {
       return NextResponse.json({ error: "잘못된 입력" }, { status: 400 });
@@ -682,7 +682,7 @@ export async function POST(req: NextRequest) {
       score: evalRes.score,       // 총점
       total_score: ev.totalScore, // total_score 컬럼
 
-      
+      mode: mode === "essay" ? "essay" : "novel",
 
       // 미학 45점 (0~5)
       first_sentence: ev.firstSentence,

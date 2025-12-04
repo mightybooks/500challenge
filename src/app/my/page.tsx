@@ -6,10 +6,11 @@ import Link from "next/link";
 import { getScoreBand, type ScoreBand } from "@/lib/og500";
 import {
   ARCANA_BACK_IMAGE,
+  ARCANA_LOSER_IMAGE,
   getArcanaImagePath,
   type ArcanaId,
 } from "@/lib/arcana/og";
-
+import { getDisplayScore, isLoserScore } from "@/lib/score";
 
 type MyRecord = {
   id: string;
@@ -159,8 +160,8 @@ export default function MyPage() {
         {/* 오늘의 도전 CTA */}
         <div className="flex justify-start sm:justify-end">
           <a
-            href="/editor"
-            className="inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            href="/start"
+            className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
           >
             오늘의 도전하기
           </a>
@@ -199,7 +200,7 @@ export default function MyPage() {
             </p>
             <div className="mt-5 flex justify-center">
               <Link
-                href="/editor"
+                href="/start"
                 className="inline-flex items-center rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
               >
                 지금 바로 작성하기
@@ -209,32 +210,38 @@ export default function MyPage() {
         </section>
       )}
 
-      {!loading && !error && hasRecords && (
+          {!loading && !error && hasRecords && (
         <>
           <section className="mt-4 space-y-3">
             {visibleRecords.map(record => {
-              const tags = Array.isArray(record.tags)
-                ? record.tags
-                : [];
-              const band =
-                record.score_band ??
-                (record.score !== null
-                  ? getScoreBand(record.score)
-                  : null);
-              const scoreInfo = getScoreBadge(
-                record.score,
-                band ?? undefined,
-              );
-              const createdLabel = formatDate(record.created_at);
+                const tags = Array.isArray(record.tags) ? record.tags : [];
 
-              const thumb =
-              record.arcana_id !== null &&
-              record.arcana_id !== undefined
-                ? getArcanaImagePath(record.arcana_id as ArcanaId)
-                : record.og_image && record.og_image.trim() !== ""
-                  ? record.og_image
-                  : ARCANA_BACK_IMAGE;
-                  
+                const rawScore = record.score;
+                const displayScore =
+                  typeof rawScore === "number" ? getDisplayScore(rawScore) : null;
+                const isLoser = isLoserScore(rawScore);
+
+                const band: ScoreBand | null =
+                  record.score_band ??
+                  (displayScore !== null ? getScoreBand(displayScore) : null);
+
+                const scoreInfo = getScoreBadge(
+                  displayScore,
+                  band ?? undefined,
+                );
+
+                const createdLabel = formatDate(record.created_at);
+
+                // 🔹 썸네일: 루저면 무조건 루저 카드
+                const thumb =
+                  isLoser
+                    ? ARCANA_LOSER_IMAGE
+                    : record.arcana_id !== null && record.arcana_id !== undefined
+                      ? getArcanaImagePath(record.arcana_id as ArcanaId)
+                      : record.og_image && record.og_image.trim() !== ""
+                        ? record.og_image
+                        : ARCANA_BACK_IMAGE;
+
               return (
                 <Link
                   key={record.id}
@@ -242,7 +249,7 @@ export default function MyPage() {
                   className="block rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                 >
                   <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
-                    {/* 썸네일: 항상 하나는 보이도록 (없으면 ARCANA_BACK_IMAGE) */}
+                    {/* 썸네일 */}
                     <div className="w-24 shrink-0 sm:w-28">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img

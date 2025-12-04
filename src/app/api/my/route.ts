@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 const DEFAULT_LIMIT = 100;
 
+export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     // 1) anon_id 쿠키로 "개인별 구분" 유지

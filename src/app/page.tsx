@@ -32,7 +32,9 @@ export default function Home() {
           <br />
           하루 단 한 번의 기회, <span className="font-semibold">하루 1회</span>만 도전하실 수 있습니다.
           <br />
-          500자 안에 여러분만의 서사를 얼마나 밀도 있게 담을 수 있을지 시험해 보세요.
+          일반 <strong>에세이와 소설 모두 가능</strong>합니다.
+          <br />
+          500자 안에 여러분만의 이야기를 밀도 있게 담을 수 있을지 시험해 보세요.
         </p>
       </header>
 
@@ -54,7 +56,7 @@ export default function Home() {
             가볍게 즐기는 놀이에 가깝고, 절대적인 문학적 평가가 아닙니다.
           </p>
           <p className="mt-2 text-[11px] text-slate-500 sm:text-[12px]">
-            너무 진지하게 상처받지 말고,  
+            너무 진지하게 상처받지 말고,{" "}
             <span className="font-medium">“오늘의 500자 실험”</span> 정도로 활용해 주세요.
           </p>
         </div>
@@ -77,7 +79,7 @@ export default function Home() {
           <p className="mt-2">
             인간 편집자 <strong>문수림이 직접 검토</strong>하여,
             <br />
-            적합하다고 판단되는 작품은{' '}
+            적합하다고 판단되는 작품은{" "}
             <strong>『월간 수림지』에 수록</strong>됩니다.
           </p>
         </div>
@@ -95,28 +97,17 @@ export default function Home() {
         </p>
       </section>
 
-      {/* CTA 버튼 영역: 도전하기 + 나의 기록 보러가기 */}
-      <section className="mt-7 flex w-full flex-col items-center gap-3 sm:mt-8 sm:flex-row sm:justify-center">
+            {/* CTA 버튼 영역: 오늘의 500자 도전 → /start */}
+      <section className="mt-7 flex w-full flex-col items-center gap-3 sm:mt-8">
         <a
-          href="/editor"
+          href="/start"
           className="inline-flex w-full max-w-xs items-center justify-center
                      rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-500
                      px-6 py-4 text-base font-semibold text-white shadow-md
                      transition-all hover:-translate-y-0.5 hover:shadow-xl hover:brightness-110
                      focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2 focus:ring-offset-slate-50"
         >
-          500자 소설 도전하기
-        </a>
-
-        <a
-          href="/my"
-          className="inline-flex w-full max-w-xs items-center justify-center
-                     rounded-2xl border border-slate-200 bg-white
-                     px-6 py-4 text-base font-semibold text-slate-800 shadow-sm
-                     transition-all hover:-translate-y-0.5 hover:shadow-md hover:bg-slate-50
-                     focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2 focus:ring-offset-slate-50"
-        >
-          나의 기록 보러가기
+          오늘의 500자 도전하기
         </a>
       </section>
 
@@ -127,8 +118,8 @@ export default function Home() {
             ※ 이 웹앱은 챌린지 기록의 <strong>영구 보존을 보장하지 않습니다.</strong>
           </p>
           <p className="mt-1">
-            중요한 작품은 결과 페이지에서 <strong>복사하거나 파일로 내려받아</strong>  
-            별도로 백업해 두시길 권장드립니다.
+            중요한 작품은 결과 페이지에서 <strong>복사하거나 파일로 내려받아</strong>
+            &nbsp;별도로 백업해 두시길 권장드립니다.
           </p>
         </div>
       </section>
