@@ -27,12 +27,15 @@ export function EntryShareBar({ title }: Props) {
 
   // ------------- Kakao SDK 로딩 & 초기화 -------------
   useEffect(() => {
-    if (!KAKAO_JS_KEY) return;
+    if (!KAKAO_JS_KEY) {
+      console.warn("Kakao JS 키가 설정되어 있지 않습니다.");
+      return;
+    }
     if (typeof window === "undefined") return;
 
     // 이미 초기화된 경우
     if (window.Kakao && window.Kakao.isInitialized()) {
-      if (window.Kakao.Link) {
+      if (window.Kakao.Share) {
         setKakaoReady(true);
       }
       return;
@@ -47,7 +50,7 @@ export function EntryShareBar({ title }: Props) {
         if (window.Kakao && !window.Kakao.isInitialized()) {
           window.Kakao.init(KAKAO_JS_KEY);
         }
-        if (window.Kakao && window.Kakao.Link) {
+        if (window.Kakao && window.Kakao.Share) {
           setKakaoReady(true);
         }
       } catch (err) {
@@ -64,12 +67,11 @@ export function EntryShareBar({ title }: Props) {
 
   // ------------- 공유 기능 -------------
 
-
-  // ✅ 카카오 공유: URL 스크랩 방식
+  // ✅ 카카오 공유: OG 스크랩 방식 (sendScrap)
   const handleKakaoShare = () => {
     if (typeof window === "undefined") return;
 
-    if (!kakaoReady || !window.Kakao || !window.Kakao.Link) {
+    if (!kakaoReady || !window.Kakao || !window.Kakao.Share) {
       alert("카카오 공유를 준비하는 중입니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
@@ -78,7 +80,7 @@ export function EntryShareBar({ title }: Props) {
     if (!url) return;
 
     try {
-      window.Kakao.Link.sendScrap({
+      window.Kakao.Share.sendScrap({
         requestUrl: url,
       });
     } catch (e) {
