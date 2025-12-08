@@ -22,6 +22,29 @@ import { getDisplayScore, isLoserScore } from "@/lib/score";
 import { LOSER_THRESHOLD } from "@/lib/score"; // 필요하다면
 import { cookies } from "next/headers";
 
+// ★ 여기에 SITE_URL 정의 추가
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://500challenge.vercel.app/";
+
+  function toAbsoluteOgUrl(pathOrUrl: string | null | undefined): string {
+  if (!pathOrUrl) {
+    return `${SITE_URL}/og/default.png`; // 최소한의 안전빵
+  }
+
+  // 이미 http(s)로 시작하면 그대로 사용
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl;
+  }
+
+  // `/`로 시작하는 상대경로인 경우
+  if (pathOrUrl.startsWith("/")) {
+    return `${SITE_URL}${pathOrUrl}`;
+  }
+
+  // 그 외 잡다한 상대 경로
+  return `${SITE_URL}/${pathOrUrl}`;
+}
+
 type PageProps = {
   params: { id: string };
 };
@@ -38,15 +61,17 @@ export async function generateMetadata(
   console.log("ARCANA META ENTRY DEBUG:", params.id, entry);
 
   if (!entry) {
+    const desc = "500자 소설 평가 결과를 확인할 수 있는 페이지입니다.";
+
     return {
       title: "500자 소설",
-      description: "내가 쓴 500자 소설을 기록하고 평가하는 서비스",
+      description: desc,
       openGraph: {
         title: "500자 소설",
-        description: "내가 쓴 500자 소설을 기록하고 평가하는 서비스",
+        description: desc,
         images: [
           {
-            url: ARCANA_BACK_IMAGE_NOVEL,
+            url: toAbsoluteOgUrl(ARCANA_BACK_IMAGE_NOVEL),
             width: 1200,
             height: 630,
           },
@@ -91,22 +116,28 @@ export async function generateMetadata(
   // 🔹 직접 분기 대신 헬퍼 사용
   const defaultOgImage = getArcanaFallbackOg(mode);
 
-  const LOW_SCORE_THRESHOLD = 50; // 🔹 기준 점수, 원하시면 나중에 조정
+  const LOW_SCORE_THRESHOLD = 50; // 기준 점수
 
-  const ogImageUrl =
-    // 🔹 점수 미달이면 무조건 루저 카드
+  // ★ 1단계: 기존 로직은 Raw 값으로
+  const ogImageUrlRaw =
     score !== null && score < LOW_SCORE_THRESHOLD
       ? ARCANA_LOSER_IMAGE
       : arcanaMeta
       ? getArcanaImagePath(arcanaMeta.id)
       : entry.og_image ?? defaultOgImage;
 
+  // ★ 2단계: 절대 URL로 변환
+  const ogImageUrl = toAbsoluteOgUrl(ogImageUrlRaw);
+
+  const desc = "500자 소설 평가 결과를 확인할 수 있는 페이지입니다.";
+
+
   return {
     title: `500자 소설 – ${t}`,
-    description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
+    description: desc,
     openGraph: {
       title: t,
-      description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
+      description: desc,
       images: [
         {
           url: ogImageUrl,
@@ -118,7 +149,7 @@ export async function generateMetadata(
     twitter: {
       card: "summary_large_image",
       title: t,
-      description: "내가 직접 쓴 500자 소설, 점수와 함께 확인해보세요.",
+      description: desc,
       images: [ogImageUrl],
     },
   };
