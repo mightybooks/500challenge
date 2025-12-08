@@ -24,7 +24,7 @@ import { cookies } from "next/headers";
 
 // ★ 여기에 SITE_URL 정의 추가
 const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://500challenge.vercel.app/";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://500challenge.vercel.app";
 
   function toAbsoluteOgUrl(pathOrUrl: string | null | undefined): string {
   if (!pathOrUrl) {
@@ -154,6 +154,7 @@ export async function generateMetadata(
     },
   };
 }
+
 
 // ================================
 // 결과 페이지 본문
