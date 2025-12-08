@@ -453,7 +453,7 @@ export default async function EntryPage({ params }: PageProps) {
           </section>
         )}
 
-        {/* 5) 본문 */}
+                {/* 5) 본문 */}
         <section className="mb-9">
           {bodyText ? (
             <p className="whitespace-pre-wrap text-[15px] leading-[1.8] text-slate-900 sm:text-[16px] sm:leading-[1.9]">
@@ -461,10 +461,35 @@ export default async function EntryPage({ params }: PageProps) {
             </p>
           ) : (
             <p className="text-sm text-slate-400">
-              저장된 본문이 없습니다. (구버전 데이터이거나 마이그레이션이
-              필요할 수 있습니다.)
+              저장된 본문이 없습니다. (구버전 데이터이거나 마이그레이션이 필요할 수 있습니다.)
             </p>
           )}
+        </section>
+
+        {/* 6) 500자 앱 안내 섹션 */}
+        <section className="mb-8 border-t border-slate-100 pt-5">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            500자 소설 앱은 이렇게 작동합니다
+          </h2>
+          <p className="mt-2 text-[12px] leading-relaxed text-slate-500 sm:text-[13px]">
+            이 평가는 문수림의 정서적 미립자 확산형 서술 구조를 바탕으로,
+            첫 문장·정지·공간화·여운 등 짧은 글 속의 감정 밀도를 수치로
+            정리한 결과입니다.
+            <br className="hidden sm:block" />
+            500자 앱의 설계 의도와 세계관이 궁금하시다면 아래에서 자세한
+            설명을 확인해 주세요.
+          </p>
+
+          <div className="mt-4 flex justify-start">
+            <a
+              href="https://surimstudio.com/500" // 실제 소개 페이지 URL로 교체 가능
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[12px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow"
+            >
+              500자 소설 앱 소개 보기
+            </a>
+          </div>
         </section>
 
         {/* 하단 마무리 텍스트 */}
