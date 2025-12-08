@@ -65,7 +65,7 @@ export default function StartPage() {
 
         {/* 간단 요약 */}
         <p className="text-sm leading-relaxed text-slate-500 sm:text-[15px]">
-          500자 앱은 짧은 글 속에 담긴 감정의 결을 감지해  
+          500자 앱은 짧은 글 속에 담긴 감정의 결을 감지해<br/>  
           <span className="font-semibold text-slate-700">정서 앵커 카드</span>와 평가를 제공합니다.
           <br className="hidden sm:block" />
           더 자세한 이야기와 세계관이 궁금하다면 아래에서 확인해 보세요.
