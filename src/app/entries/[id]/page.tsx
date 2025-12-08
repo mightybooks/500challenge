@@ -20,6 +20,7 @@ import { ArcanaSection } from "@/components/arcana/ArcanaSection";
 import type { WritingMode } from "@/lib/arcana/types";
 import { getDisplayScore, isLoserScore } from "@/lib/score";
 import { LOSER_THRESHOLD } from "@/lib/score"; // 필요하다면
+import { cookies } from "next/headers";
 
 type PageProps = {
   params: { id: string };
@@ -140,6 +141,24 @@ export default async function EntryPage({ params }: PageProps) {
     );
   }
 
+  // ★ 여기부터 추가: 작성자 본인 여부 판별
+  const cookieStore = cookies();
+  const anonFromCookie = cookieStore.get("anon_id")?.value ?? null;
+  const anonFromEntry = (entry as any).anon_id as string | null | undefined;
+
+  const isOwner =
+    !!anonFromCookie &&
+    typeof anonFromEntry === "string" &&
+    anonFromEntry === anonFromCookie;
+  // ★ 추가 끝 
+
+  // ★ 여기에 로그 찍기 (정확한 위치)
+  console.log("OWNER CHECK:", {
+    anonFromCookie,
+    anonFromEntry,
+    isOwner,
+  }); 
+  
   // ---------- 기본 데이터 ----------
   const title: string = entry.title ?? "500자 소설";
 
@@ -336,29 +355,31 @@ export default async function EntryPage({ params }: PageProps) {
           <p className="mt-3 text-center text-[11px] text-slate-500 sm:text-xs">
             이 이미지는 카카오톡·X 등에서 공유될 때 사용됩니다.
           </p>
+          
+          {isOwner && (
+            <div className="mt-4 flex flex-col items-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <a
+                  href={ogImageUrl}
+                  download
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 sm:text-[13px]"
+                >
+                  결과 이미지 저장하기
+                </a>
+              </div>
 
-          <div className="mt-4 flex flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <a
-                href={ogImageUrl}
-                download
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 sm:text-[13px]"
-              >
-                결과 이미지 저장하기
-              </a>
-            </div>
-
-            <div className="mt-1 w-full max-w-xl">
-              <p className="mb-1 text-center text-[11px] font-medium tracking-wide text-slate-400">
-                결과 페이지 공유
-              </p>
-              <div className="flex justify-center">
-                <div className="w-full [&_p]:hidden [&_button]:flex-1 [&_button]:py-2.5 [&_button]:text-[13px] [&_button]:font-medium">
-                  <EntryShareBar title={title} />
+              <div className="mt-1 w-full max-w-xl">
+                <p className="mb-1 text-center text-[11px] font-medium tracking-wide text-slate-400">
+                  결과 페이지 공유
+                </p>
+                <div className="flex justify-center">
+                  <div className="w-full [&_p]:hidden [&_button]:flex-1 [&_button]:py-2.5 [&_button]:text-[13px] [&_button]:font-medium">
+                    <EntryShareBar title={title} />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}                    
         </section>
 
         {/* 3) 미학 요약 프로필 */}
@@ -424,21 +445,33 @@ export default async function EntryPage({ params }: PageProps) {
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
-            <Link
-              href="/my"
-              className="inline-flex items-center justify-center rounded-lg 
-                       bg-[#3a302c] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2f2723]"
-            >
-              내 기록 보기
-            </Link>
+            {isOwner ? (
+              <>
+                <Link
+                  href="/my"
+                  className="inline-flex items-center justify-center rounded-lg 
+                           bg-[#3a302c] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2f2723]"
+                >
+                  내 기록 보기
+                </Link>
 
-            <button
-              disabled
-              className="inline-flex cursor-not-allowed items-center justify-center rounded-lg 
-                       bg-[#2F5D46] px-4 py-2 text-sm font-medium text-white opacity-70 transition hover:bg-[#264E39]"
-            >
-              수림스튜디오로 보내기 (준비중)
-            </button>
+                <button
+                  disabled
+                  className="inline-flex cursor-not-allowed items-center justify-center rounded-lg 
+                           bg-[#2F5D46] px-4 py-2 text-sm font-medium text-white opacity-70 transition hover:bg-[#264E39]"
+                >
+                  수림스튜디오로 보내기 (준비중)
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/editor"
+                className="inline-flex items-center justify-center rounded-lg 
+                         bg-[#3a302c] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#2f2723]"
+              >
+                나도 도전해보기
+              </Link>
+            )}
           </div>
         </footer>
       </article>

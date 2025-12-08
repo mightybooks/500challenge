@@ -82,7 +82,8 @@ export async function getEntryById(id: string): Promise<EntryRow | null> {
       reasons,
       created_at,
       byte_count,
-      mode
+      mode,
+      anon_id
     `)
     .eq("id", id)
     .single();
