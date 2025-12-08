@@ -25,12 +25,14 @@ export function EntryShareBar({ title }: Props) {
   const [kakaoReady, setKakaoReady] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // ------------- Kakao SDK 로딩 & 초기화 -------------
   useEffect(() => {
     if (!KAKAO_JS_KEY) return;
+    if (typeof window === "undefined") return;
 
     // 이미 초기화된 경우
     if (window.Kakao && window.Kakao.isInitialized()) {
-      if (window.Kakao.Share) {
+      if (window.Kakao.Link) {
         setKakaoReady(true);
       }
       return;
@@ -45,7 +47,7 @@ export function EntryShareBar({ title }: Props) {
         if (window.Kakao && !window.Kakao.isInitialized()) {
           window.Kakao.init(KAKAO_JS_KEY);
         }
-        if (window.Kakao && window.Kakao.Share) {
+        if (window.Kakao && window.Kakao.Link) {
           setKakaoReady(true);
         }
       } catch (err) {
@@ -57,16 +59,17 @@ export function EntryShareBar({ title }: Props) {
     };
     document.head.appendChild(script);
 
-    return () => {
-      // SDK는 계속 유지
-    };
+    // SDK는 유지
   }, []);
 
   // ------------- 공유 기능 -------------
 
-  // 카카오 공유
+
+  // ✅ 카카오 공유: URL 스크랩 방식
   const handleKakaoShare = () => {
-    if (!kakaoReady || !window.Kakao || !window.Kakao.Share) {
+    if (typeof window === "undefined") return;
+
+    if (!kakaoReady || !window.Kakao || !window.Kakao.Link) {
       alert("카카오 공유를 준비하는 중입니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
@@ -74,35 +77,16 @@ export function EntryShareBar({ title }: Props) {
     const url = getCurrentUrl();
     if (!url) return;
 
-    const imageUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/og/500/unicorn-aqua.png`
-        : "";
-
-    window.Kakao.Share.sendDefault({
-      objectType: "feed",
-      content: {
-        title: `500자 소설 – ${title}`,
-        description: "내가 직접 쓴 500자 소설 평가 결과입니다.",
-        imageUrl,
-        link: {
-          mobileWebUrl: url,
-          webUrl: url,
-        },
-      },
-      buttons: [
-        {
-          title: "페이지 열기",
-          link: {
-            mobileWebUrl: url,
-            webUrl: url,
-          },
-        },
-      ],
-    });
+    try {
+      window.Kakao.Link.sendScrap({
+        requestUrl: url,
+      });
+    } catch (e) {
+      console.error("Kakao share error:", e);
+    }
   };
 
-  // 트위터
+  // 트위터(X)
   const handleTwitterShare = () => {
     const url = getCurrentUrl();
     if (!url) return;
