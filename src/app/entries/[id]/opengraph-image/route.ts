@@ -37,7 +37,7 @@ export async function GET(
     const ogPath =
       entry?.og_image && typeof entry.og_image === "string"
         ? entry.og_image
-        : "/og/arcana/00-fool.png";
+        : "/og/arcana/ogdefault.png";
 
     // 3) public 디렉토리의 실제 파일 경로로 변환
     const safeRel = ogPath.replace(/^\/+/, ""); // "/..." → "..."

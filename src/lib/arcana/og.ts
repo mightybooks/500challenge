@@ -417,7 +417,7 @@ export function getArcanaImagePathFromMeta(card: ArcanaCard): string {
 /** id로 앞면 이미지 경로 생성 (기존 사용처 호환용) */
 export function getArcanaImagePath(id: ArcanaId | null | undefined): string {
   const card = getArcanaById(id);
-  if (!card) return "/og/arcana/00-fool.png";
+  if (!card) return "/og/arcana/ogdefault.png";
   return getArcanaImagePathFromMeta(card);
 }
 

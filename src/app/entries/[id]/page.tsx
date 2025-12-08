@@ -28,7 +28,7 @@ const SITE_URL =
 
   function toAbsoluteOgUrl(pathOrUrl: string | null | undefined): string {
   if (!pathOrUrl) {
-    return `${SITE_URL}/og/default.png`; // 최소한의 안전빵
+    return `${SITE_URL}/og/arcana/ogdefault.png`; // 최소한의 안전빵
   }
 
   // 이미 http(s)로 시작하면 그대로 사용

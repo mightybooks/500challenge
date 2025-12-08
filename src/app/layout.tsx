@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     siteName: "500자 소설 챌린지",
     images: [
       {
-        url: "/og/arcana/00-fool.png", // public 아래라 이렇게만 써도 됨
+        url: "/og/arcana/ogdefault.png", // public 아래라 이렇게만 써도 됨
         width: 1200,
         height: 630,
         alt: "500자 소설 챌린지 대표 이미지",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: "500자 소설 챌린지 | 수림스튜디오",
     description:
       "500자 초단편을 쓰고, 수림봇에게 평가받는 플레이그라운드.",
-    images: ["/og/arcana/00-fool.png"],
+    images: ["/og/arcana/ogdefault.png"],
   },
 };
 
