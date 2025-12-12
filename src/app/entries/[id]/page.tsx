@@ -523,7 +523,7 @@ export default async function EntryPage({ params }: PageProps) {
 
           <div className="mt-4 flex justify-start">
             <a
-              href="https://surimstudio.com/500" // 실제 소개 페이지 URL로 교체 가능
+              href="https://surimstudio.com/projects/500fiction_app"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-[12px] font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow"
