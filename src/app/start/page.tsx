@@ -74,7 +74,7 @@ export default function StartPage() {
         {/* 수림스튜디오로 이동 버튼 */}
         <div className="mt-5 flex justify-center">
           <a
-            href="https://surimstudio.com/500" 
+            href="https://surimstudio.com/projects/500fiction_app" 
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center
