@@ -21,6 +21,8 @@ import type { WritingMode } from "@/lib/arcana/types";
 import { getDisplayScore, isLoserScore } from "@/lib/score";
 import { LOSER_THRESHOLD } from "@/lib/score"; // 필요하다면
 import { cookies } from "next/headers";
+import { SendToSurimButton } from "@/components/SendToSurimButton";
+
 
 // ★ 여기에 SITE_URL 정의 추가
 const SITE_URL =
@@ -211,7 +213,7 @@ export default async function EntryPage({ params }: PageProps) {
   const byteCount: number | null =
     typeof entry.byte_count === "number" ? entry.byte_count : null;
 
-  const createdAt =
+  const createdAtDisplay =
     entry.created_at &&
     new Date(entry.created_at).toLocaleString("ko-KR", {
       year: "numeric",
@@ -220,6 +222,11 @@ export default async function EntryPage({ params }: PageProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    const createdAtIso =
+      entry.created_at
+        ? new Date(entry.created_at).toISOString()
+        : "";
 
  // ---------- 아르카나 / OG 이미지 ----------
 
@@ -343,7 +350,7 @@ export default async function EntryPage({ params }: PageProps) {
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400">
               {byteCount !== null && <span>바이트 {byteCount}/1250</span>}
-              {createdAt && <span>작성일 {createdAt}</span>}
+              {createdAtDisplay && <span>작성일 {createdAtDisplay}</span>}
             </div>
           </div>
 
@@ -487,13 +494,14 @@ export default async function EntryPage({ params }: PageProps) {
                   내 기록 보기
                 </Link>
 
-                <button
-                  disabled
-                  className="inline-flex cursor-not-allowed items-center justify-center rounded-lg 
-                           bg-[#2F5D46] px-4 py-2 text-sm font-medium text-white opacity-70 transition hover:bg-[#264E39]"
-                >
-                  수림스튜디오로 보내기 (준비중)
-                </button>
+                <SendToSurimButton
+                  payloadBase={{
+                    title,
+                    content: bodyText,
+                    og_image_key: entry.og_image!,
+                    created_at: createdAtIso,
+                  }}
+                />
               </>
             ) : (
               <Link

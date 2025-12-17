@@ -1,4 +1,5 @@
 // File: src/app/api/entry-arcana/route.ts
+
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {

@@ -45,7 +45,8 @@ export type EntryRow = {
   tags: string[] | null;
   reasons: string[] | null;
   created_at: string | null;
-  byte_count: number | null;
+  byte_count: number | null;  
+  anon_id: string | null;
 };
 
 export async function getEntryById(id: string): Promise<EntryRow | null> {
@@ -83,7 +84,7 @@ export async function getEntryById(id: string): Promise<EntryRow | null> {
       created_at,
       byte_count,
       mode,
-      anon_id
+      anon_id      
     `)
     .eq("id", id)
     .single();
