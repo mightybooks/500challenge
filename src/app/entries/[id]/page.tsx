@@ -480,7 +480,9 @@ export default async function EntryPage({ params }: PageProps) {
             위 결과는 어디까지나 수림봇에 의한 기계적 평가 기준일 뿐입니다.
             <br />
             작품의 가치를 제대로 평가 받고 싶다면, 수림스튜디오로 글을
-            보내주세요.
+            보내주세요.<br/>
+            제출된 작품은 문수림이 직접 읽고 검토하며, 그중 우수작은
+            <span className="font-semibold text-slate-600">월간 수림지에 수록</span>됩니다.
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">

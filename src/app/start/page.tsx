@@ -57,34 +57,26 @@ export default function StartPage() {
         </a>
       </section>
   
-      {/* ▼▼▼ 여기가 신규 추가 섹션 ▼▼▼                                  */}
+      {/* ▼▼▼ 신규 안내 섹션 (태도 + 귀환 경로) ▼▼▼ */}
 
       <section className="mt-14 w-full max-w-xl text-center">
         {/* 구분선 */}
         <div className="mx-auto mb-6 h-px w-32 bg-slate-200"></div>
 
-        {/* 간단 요약 */}
+        {/* 안내 문구 */}
         <p className="text-sm leading-relaxed text-slate-500 sm:text-[15px]">
-          500자 앱은 짧은 글 속에 담긴 감정의 결을 감지해<br/>  
-          <span className="font-semibold text-slate-700">정서 앵커 카드</span>와 평가를 제공합니다.
-          <br className="hidden sm:block" />
-          더 자세한 이야기와 세계관이 궁금하다면 아래에서 확인해 보세요.
+          글은 한 번에 늘지 않습니다.
+          <br />
+          <span className="font-semibold text-slate-700">
+            500자 챌린지는 꾸준함과 문장력을 길러주는 도구입니다.
+          </span>
+          <br /><br />
+          이 앱을 매일 쓰고 싶으시다면,
+          <br />
+          검색창에서 <span className="font-semibold text-slate-700">‘수림 스튜디오’</span>를 검색하세요.
+          <br />
+          메인 화면에서 언제든 다시 시작할 수 있습니다.
         </p>
-
-        {/* 수림스튜디오로 이동 버튼 */}
-        <div className="mt-5 flex justify-center">
-          <a
-            href="https://surimstudio.com/projects/500fiction_app" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center
-                       rounded-full border border-slate-300 bg-white px-4 py-2
-                       text-sm font-medium text-slate-700 shadow-sm
-                       transition hover:bg-slate-50 hover:shadow"
-          >
-            500자 소설 앱 소개 보기
-          </a>
-        </div>
       </section>
 
     </main>
