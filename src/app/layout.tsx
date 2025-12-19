@@ -9,10 +9,6 @@ export const metadata: Metadata = {
     "500자 안에 당신만의 소설을 써보세요. 수림봇이 문수림 미학 기준으로 점수를 매기고, 공유 가능한 카드까지 만들어 드립니다.",
   metadataBase: new URL("https://500challenge.vercel.app"),
 
-  verification: {
-    google: "16LgOTtn--lHPZEAVf0h2NuRilPisRGREtf3wZooizo" 
-  },
-
   openGraph: {
     title: "500자 소설 챌린지 | 수림스튜디오",
     description:
@@ -21,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "500자 소설 챌린지",
     images: [
       {
-        url: "/og/arcana/ogdefault.png", // public 아래라 이렇게만 써도 됨
+        url: "/og/arcana/ogdefault.png",
         width: 1200,
         height: 630,
         alt: "500자 소설 챌린지 대표 이미지",
@@ -29,12 +25,13 @@ export const metadata: Metadata = {
     ],
     type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
     title: "500자 소설 챌린지 | 수림스튜디오",
     description:
       "500자 초단편을 쓰고, 수림봇에게 평가받는 플레이그라운드.",
-    images: ["/og/arcana/ogdefault.png"],    
+    images: ["/og/arcana/ogdefault.png"],
   },
 };
 
@@ -45,18 +42,35 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* Google */}
+        <meta
+          name="google-site-verification"
+          content="16LgOTtn--lHPZEAVf0h2NuRilPisRGREtf3wZooizo"
+        />
+
+        {/* Naver */}
+        <meta
+          name="naver-site-verification"
+          content="fb6e421fb03edbc430746f59dc846ada4d6f425f"
+        />
+      </head>
+
       <body
-        style={{ margin: 0, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto" }}
+        style={{
+          margin: 0,
+          fontFamily: "system-ui, -apple-system, Segoe UI, Roboto",
+        }}
         className="bg-slate-50 text-slate-900"
       >
         <div className="flex min-h-screen flex-col">
-          {/* 메인 컨텐츠 */}
           <main className="flex-1">{children}</main>
 
-          {/* 공통 푸터 */}
           <footer className="mt-12 border-t border-slate-200 bg-white/80 py-6 text-center text-[11px] text-slate-500">
             <p>© 2025 Surim Studio. All rights reserved.</p>
-            <p className="mt-1">500자 소설 챌린지 · 수림스튜디오 실험 웹앱</p>
+            <p className="mt-1">
+              500자 소설 챌린지 · 수림스튜디오 실험 웹앱
+            </p>
             <p className="mt-1">
               <a
                 href="https://surimstudio.com"
