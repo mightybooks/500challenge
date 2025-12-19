@@ -79,6 +79,10 @@ export async function generateMetadata(
           },
         ],
       },
+      robots: {
+      index: false,
+      follow: false,
+    },
     };
   }
 
@@ -131,11 +135,12 @@ export async function generateMetadata(
   // ★ 2단계: 절대 URL로 변환
   const ogImageUrl = toAbsoluteOgUrl(ogImageUrlRaw);
 
-  const desc = "500자 소설 평가 결과를 확인할 수 있는 페이지입니다.";
-
+  const desc =
+  entry.body?.slice(0, 120).replace(/\n/g, " ") ||
+  "500자 안에 쓴 초단편 소설 한 편입니다.";
 
   return {
-    title: `500자 소설 – ${t}`,
+    title: `${t} | 500자 소설`,
     description: desc,
     openGraph: {
       title: t,
@@ -227,6 +232,31 @@ export default async function EntryPage({ params }: PageProps) {
       entry.created_at
         ? new Date(entry.created_at).toISOString()
         : "";
+
+const articleJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: title,
+  description:
+    bodyText.slice(0, 120).replace(/\n/g, " ") ||
+    "500자 안에 쓴 초단편 소설 한 편입니다.",
+  articleBody: bodyText,
+  datePublished: createdAtIso || undefined,
+  dateModified: createdAtIso || undefined,
+  author: {
+    "@type": "Person",
+    name: "익명 참여자",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "수림 스튜디오",
+    url: "https://surimstudio.com",
+  },
+  mainEntityOfPage: {
+    "@type": "WebPage",
+    "@id": `${SITE_URL}/entries/${params.id}`,
+  },
+};
 
  // ---------- 아르카나 / OG 이미지 ----------
 
@@ -333,8 +363,14 @@ export default async function EntryPage({ params }: PageProps) {
   return (
     <main className="flex min-h-screen justify-center bg-slate-50 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <article className="w-full max-w-3xl rounded-3xl bg-white px-4 py-6 shadow-sm sm:px-8 sm:py-8">
-        {/* 헤더 영역 */}
-        <header className="mb-6 border-b border-slate-200 pb-5">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(articleJsonLd),
+            }}
+          />
+          {/* 헤더 영역 */}
+          <header className="mb-6 border-b border-slate-200 pb-5">
           <h1 className="text-[20px] font-semibold leading-tight tracking-tight text-slate-900 sm:text-[22px]">
             {title}
           </h1>
@@ -520,7 +556,7 @@ export default async function EntryPage({ params }: PageProps) {
         {/* 6) 500자 앱 안내 섹션 */}
         <section className="mt-8 mb-2 border-t border-slate-100 pt-5">
           <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-            500자 소설 앱은 이렇게 작동합니다
+            500자 챌린지 앱은 이렇게 작동합니다
           </h2>
           <p className="mt-2 text-[12px] leading-relaxed text-slate-500 sm:text-[13px]">
             이 평가는 문수림의 정서적 미립자 확산형 서술 구조를 바탕으로,
@@ -531,7 +567,8 @@ export default async function EntryPage({ params }: PageProps) {
             설명을 확인해 주세요.
           </p>
 
-          <div className="mt-4 flex justify-start">
+         <div className="mt-4 flex flex-wrap items-center gap-3">
+            {/* 기존 버튼 */}
             <a
               href="https://surimstudio.com/projects/500fiction_app"
               target="_blank"
@@ -540,6 +577,14 @@ export default async function EntryPage({ params }: PageProps) {
             >
               500자 소설 앱 소개 보기
             </a>
+
+            {/* 추가 링크 — 약하게 */}
+            <Link
+              href="/arcana"
+              className="text-[12px] text-slate-500 underline underline-offset-2 hover:text-slate-800"
+            >
+              다른 이들 작품 엿보기
+            </Link>
           </div>
         </section>
       </article>

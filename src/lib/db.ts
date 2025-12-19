@@ -124,3 +124,33 @@ export async function getEntryById(id: string): Promise<EntryRow | null> {
 
   return normalized;
 }
+
+export async function getRecentEntries(
+  limit = 40
+): Promise<EntryRow[]> {
+  const { data, error } = await supabaseAdmin
+    .from("entries")
+    .select(`
+      id,
+      title,
+      body,
+      arcana_id,
+      arcana_code,
+      created_at
+    `)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("getRecentEntries error:", error);
+    return [];
+  }
+
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    arcana_id:
+      row.arcana_id === null || row.arcana_id === undefined
+        ? null
+        : Number(row.arcana_id),
+  }));
+}
