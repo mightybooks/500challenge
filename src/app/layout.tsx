@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   description:
     "500자 안에 당신만의 소설을 써보세요. 수림봇이 문수림 미학 기준으로 점수를 매기고, 공유 가능한 카드까지 만들어 드립니다.",
   metadataBase: new URL("https://500challenge.vercel.app"),
+
+  verification: {
+    google: "16LgOTtn--lHPZEAVf0h2NuRilPisRGREtf3wZooizo" 
+  },
+
   openGraph: {
     title: "500자 소설 챌린지 | 수림스튜디오",
     description:
@@ -29,7 +34,7 @@ export const metadata: Metadata = {
     title: "500자 소설 챌린지 | 수림스튜디오",
     description:
       "500자 초단편을 쓰고, 수림봇에게 평가받는 플레이그라운드.",
-    images: ["/og/arcana/ogdefault.png"],
+    images: ["/og/arcana/ogdefault.png"],    
   },
 };
 
