@@ -17,7 +17,7 @@ import type { WritingMode } from "@/lib/arcana/types";
 const MAX_BYTES = BYTE_LIMIT;
 const WARN_BYTES = 50;
 
-type Phase = "idle" | "confirm" | "loading" | "error";
+type Phase = "idle" | "confirm" | "rewrite-confirm" | "loading" | "error";
 
 function getRandomSeedSentence(mode: WritingMode): string {
   const pool = mode === "essay" ? ARCANA_SEEDS_ESSAY : ARCANA_SEEDS_NOVEL;
@@ -143,6 +143,15 @@ export default function EditorPage() {
       textareaRef.current?.focus();
     });
   }
+
+  function handleBackToEditor() {
+  setOpen(false);
+  setPhase("idle");
+
+  requestAnimationFrame(() => {
+    textareaRef.current?.focus();
+  });
+}
 
   // 실제 제출
 async function handleConfirmSubmit() {
@@ -402,13 +411,24 @@ async function handleConfirmSubmit() {
               </p>
             </div>
 
-            <div className="mt-3 flex items-center justify-between gap-3 border-t border-neutral-200 bg-white pb-2 pt-3">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-neutral-200 bg-white pb-2 pt-3">
               <button
                 type="button"
-                onClick={handleRewrite}
+                onClick={handleBackToEditor}
                 className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold text-neutral-800"
               >
-                다시 쓰기
+                일부만 수정하기
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setPhase("rewrite-confirm");
+                  setOpen(true);
+                }}
+                className="rounded-full bg-neutral-100 px-4 py-2 text-xs font-semibold text-neutral-700"
+              >
+                전체 다시 쓰기
               </button>
 
               <button
@@ -417,7 +437,39 @@ async function handleConfirmSubmit() {
                 disabled={loading}
                 className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
-                이대로 제출, 결과 페이지로 이동
+                제출하고 결과 보기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {phase === "rewrite-confirm" && (
+          <div className="space-y-4 py-4">
+            <h2 className="text-sm font-semibold text-neutral-900">
+              전체 다시 쓰기
+            </h2>
+
+            <p className="text-sm text-neutral-600">
+              지금까지 작성한 글이 모두 삭제됩니다.
+              <br />
+              정말 처음부터 다시 쓰시겠습니까?
+            </p>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <button
+                type="button"
+                onClick={() => setPhase("confirm")}
+                className="rounded-full bg-neutral-200 px-4 py-2 text-xs font-semibold"
+              >
+                아니오
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRewrite}
+                className="rounded-full bg-black px-4 py-2 text-xs font-semibold text-white"
+              >
+                예, 전체 다시 쓰기
               </button>
             </div>
           </div>

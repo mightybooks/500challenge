@@ -86,6 +86,20 @@ export default function Home() {
         </a>
       </section>
 
+      {/* 프로젝트 소개 링크 (SEO용) */}
+        <section className="mt-6 w-full text-center">
+          <p className="text-[11px] text-slate-400 sm:text-xs">
+            이 앱에 대해 더 알고 싶다면&nbsp;
+            <a
+              href="/about"
+              className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800"
+            >
+              500자 챌린지 소개
+            </a>
+            를 확인하세요.
+          </p>
+        </section>
+
       {/* 기록 보존 관련 안내 */}
       <section className="mt-6 w-full">
         <div className="rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3 text-center text-[11px] leading-relaxed text-slate-400 sm:text-xs">

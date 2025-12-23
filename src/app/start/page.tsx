@@ -21,6 +21,17 @@ export default function StartPage() {
         </p>
       </header>
 
+      {/* about 안내 링크 */}
+        <section className="mt-5 text-center">
+          <a
+            href="/about"
+            className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700"
+          >
+            <span className="text-sm">ⓘ</span>
+            500자 챌린지는 어떤 앱인가요?
+          </a>
+        </section>
+        
       {/* 선택 버튼 */}
       <section className="mt-8 flex w-full flex-col items-center gap-3 sm:mt-10">
         <a
