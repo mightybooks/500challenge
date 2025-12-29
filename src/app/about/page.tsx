@@ -8,8 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/about" },
   openGraph: {
     title: "500자 챌린지 소개 | 500자로 완결되는 글쓰기 실험",
-    description:
-      "500자 챌린지는 500자 이내로 글을 완결하는 글쓰기 실험 웹앱입니다. 문장 밀도와 사고의 핵심을 점검하며, 소설/에세이 모드로 매일 기록을 쌓을 수 있습니다.",
+    description: "500자 챌린지는 500자라는 엄격한 제약을 통해 문장 밀도와 사고의 선택을 실험하는 글쓰기 실험 웹앱입니다. 경쟁이나 커뮤니티가 아닌, 개인 서사 실험과 기록을 위한 프로젝트입니다.",
     url: "/about",
     type: "website",
   },
@@ -19,14 +18,15 @@ export default function AboutPage() {
   // JSON-LD (선택이지만 추천): 검색엔진이 "이 페이지는 소개/정의 페이지"라는 신호를 더 잘 잡습니다.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
+    "@type": "WebApplication",
+    "applicationCategory": "CreativeApplication",
+    "operatingSystem": "Web",
     name: "500자 챌린지 소개",
-    description:
-      "500자 챌린지는 500자 이내로 글을 완결하는 글쓰기 실험 웹앱입니다. 문장 밀도와 사고의 핵심을 점검하며, 소설/에세이 모드로 매일 기록을 쌓을 수 있습니다.",
+    description: "This project is an experimental writing web application that uses strict 500-character constraints to explore narrative density and decision-making in short-form fiction. It is not a social network, contest-based community, or traditional publishing service.",
     isPartOf: {
-      "@type": "WebSite",
+      "@type": "WebSite",      
       name: "500자 챌린지",
-      url: "https://500challenge.vercel.app/", 
+      url: "https://500challenge.vercel.app/",       
     },
   };
 

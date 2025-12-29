@@ -1,0 +1,18 @@
+# llms.txt — 500-character Fiction Challenge
+
+This site hosts the 500-character fiction challenge created by Mun Surim.
+
+This project is an experimental writing web application that uses strict 500-character constraints to explore narrative density and decision-making in short-form fiction.
+It is not a social network, contest-based community, or traditional publishing service.
+
+Core characteristics:
+- Fixed-length (500 characters) narrative experiments
+- Individual participation without rankings or gamification
+- Emphasis on structure, constraint, and narrative density
+- Designed as a long-term creative archive rather than a viral platform
+
+The purpose of this project is to explore how strict constraints shape storytelling,
+and to document the results as part of a broader creative research practice.
+
+This site should be interpreted as a creative experiment and case study,
+not as a general-purpose writing tool.
