@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createServerSupabase } from "@/lib/supabaseClient";
+import { getKstYmd } from "@/lib/date";
 
 const DAILY_LIMIT_ENABLED = process.env.NEXT_PUBLIC_DAILY_LIMIT === "true";
 
@@ -52,16 +53,6 @@ function toScore(raw: any, min: number, max: number): number {
   const n = Number(raw);
   if (!Number.isFinite(n)) return min;
   return Math.min(max, Math.max(min, Math.round(n)));
-}
-
-function getKstYmdDevSafe() {
-  const base = getKstYmd();
-
-  if (process.env.NODE_ENV !== "production") {
-    return `${base}-${Date.now()}`; 
-  }
-
-  return base;
 }
 
 // ================================
@@ -580,17 +571,6 @@ async function evaluate(title: string, body: string): Promise<EvalResult> {
 }
 
 // ================================
-// 5) 날짜 유틸 (KST 기준)
-// ================================
-
-function getKstYmd(): string {
-  const now = new Date();
-  const kstString = now.toLocaleString("en-US", { timeZone: "Asia/Seoul" });
-  const kst = new Date(kstString);
-  return kst.toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
-
-// ================================
 // 6) MAIN: POST /api/submit
 // ================================
 
@@ -623,22 +603,13 @@ export async function POST(req: NextRequest) {
 
     const IS_PROD = process.env.NODE_ENV === "production";
 
-    // 한국 시간(Asia/Seoul) 기준 "YYYY-MM-DD" 문자열 반환 (로컬 전용 복붙 버전)
-  function getKstYmdLocal(): string {
-    const now = new Date();
-    const kstString = now.toLocaleString("en-US", { timeZone: "Asia/Seoul" });
-    const kst = new Date(kstString);
-    return kst.toISOString().slice(0, 10); // "2025-11-21"
-  }
-
    // anon_id 쿠키
     const anonCookie = cookies().get("anon_id");
     const anonId = anonCookie?.value ?? null;
 
     // ✅ 오늘 날짜(KST 기준) – 프로덕션에서만 사용
     const submitYmd =
-  IS_PROD && DAILY_LIMIT_ENABLED ? getKstYmdLocal() : null;
-
+      IS_PROD && DAILY_LIMIT_ENABLED ? getKstYmd() : null;
 
     // ✅ 하루 1회 선 체크 (프로덕션 + anon_id + submit_ymd 있을 때만)
     if (IS_PROD && DAILY_LIMIT_ENABLED && anonId && submitYmd) {

@@ -221,6 +221,7 @@ export default async function EntryPage({ params }: PageProps) {
   const createdAtDisplay =
     entry.created_at &&
     new Date(entry.created_at).toLocaleString("ko-KR", {
+      timeZone: "Asia/Seoul",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -386,7 +387,7 @@ const articleJsonLd = {
 
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400">
               {byteCount !== null && <span>바이트 {byteCount}/1250</span>}
-              {createdAtDisplay && <span>작성일 {createdAtDisplay}</span>}
+              {createdAtDisplay && <span>작성일 {createdAtDisplay} (KST)</span>}
             </div>
           </div>
 
