@@ -469,6 +469,10 @@ const articleJsonLd = {
               5점 만점 기준으로 정리한 요약입니다.
             </p>
 
+            <p className="mt-2 text-[10px] text-slate-400">
+              이 평가는 문수림 작가의 반복 서사 실험에서 도출된 기준을 사용합니다.
+            </p>
+
             <div className="mt-3 grid gap-2 sm:gap-2.5">
               <MetricBar label="첫 문장" value={firstSentence} max={5} />
               <MetricBar label="정지" value={freeze} max={5} />
